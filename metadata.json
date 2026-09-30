@@ -1,0 +1,6 @@
+{
+  "name": "Zion Cakes & Bites",
+  "description": "Website for Zion Cakes & Bites in Mbeya, featuring fresh cakes, food, drinks, and custom orders.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

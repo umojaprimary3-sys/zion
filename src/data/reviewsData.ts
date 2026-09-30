@@ -1,0 +1,103 @@
+import { ReviewItem } from '../types';
+
+export const REVIEWS_DATA: ReviewItem[] = [
+  {
+    id: 'rev-1',
+    author: 'Anna M.',
+    location: 'Forest Area, Mbeya',
+    rating: 5,
+    comment: 'The birthday cake was beautiful and tasted even better. Zion made our celebration feel so special! The red velvet was moist and not overly sweet.',
+    date: '3 days ago',
+    occasion: 'Birthday Celebration',
+    verified: true,
+  },
+  {
+    id: 'rev-2',
+    author: 'Joseph K.',
+    location: 'Mwanjelwa, Mbeya',
+    rating: 5,
+    comment: 'Fresh pizza, friendly service, and quick pickup. This is my go-to spot in Mbeya whenever craving real cheese and thick meat toppings.',
+    date: '1 week ago',
+    occasion: 'Dinner with Friends',
+    verified: true,
+  },
+  {
+    id: 'rev-3',
+    author: 'Neema R.',
+    location: 'Soweto, Mbeya',
+    rating: 5,
+    comment: 'I ordered fresh juice and chicken shawarma for the entire office — everything arrived fresh, warm, and neatly packed. Super fast delivery!',
+    date: '2 weeks ago',
+    occasion: 'Office Lunch Delivery',
+    verified: true,
+  },
+  {
+    id: 'rev-4',
+    author: 'Baraka Mwambene',
+    location: 'Njia Panda, Mbeya',
+    rating: 5,
+    comment: 'Best ambience in the city for weekend relaxation. The Wi-Fi is reliable, the iced caramel coffee is fantastic, and the acoustics with gentle music are perfect.',
+    date: '3 weeks ago',
+    occasion: 'Weekend Hangout',
+    verified: true,
+  },
+  {
+    id: 'rev-5',
+    author: 'Grace Sanga',
+    location: 'Uyole, Mbeya',
+    rating: 5,
+    comment: 'Ordered a 2-tier send-off cake last month. Guests could not stop complimenting the chocolate fudge and passion fruit tiers. Zion exceeded our expectations.',
+    date: '1 month ago',
+    occasion: 'Wedding Send-off',
+    verified: true,
+  },
+  {
+    id: 'rev-6',
+    author: 'David L.',
+    location: 'Iyunga, Mbeya',
+    rating: 5,
+    comment: 'Their southern fried chicken burger and jumbo cookies are on another level. Very clean kitchen and friendly staff at the counter.',
+    date: '1 month ago',
+    occasion: 'Family Dinner',
+    verified: true,
+  },
+];
+
+export const GALLERY_IMAGES = [
+  {
+    id: 'gal-1',
+    src: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?q=80&w=1000&auto=format&fit=crop',
+    title: 'Custom Birthday Masterpiece',
+    tag: 'Custom Cakes',
+  },
+  {
+    id: 'gal-2',
+    src: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1000&auto=format&fit=crop',
+    title: 'Freshly Baked Chocolate Fudge',
+    tag: 'In the Kitchen',
+  },
+  {
+    id: 'gal-3',
+    src: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1000&auto=format&fit=crop',
+    title: 'Woodfire Crust Supreme Pizza',
+    tag: 'Savoury Bites',
+  },
+  {
+    id: 'gal-4',
+    src: 'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?q=80&w=1000&auto=format&fit=crop',
+    title: 'Warm Zion Café Ambience',
+    tag: 'Dine-In Vibe',
+  },
+  {
+    id: 'gal-5',
+    src: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?q=80&w=1000&auto=format&fit=crop',
+    title: 'Jumbo Chocolate Chip Bakes',
+    tag: 'Fresh Bakes',
+  },
+  {
+    id: 'gal-6',
+    src: 'https://images.unsplash.com/photo-1432139555190-58524dae6a55?q=80&w=1000&auto=format&fit=crop',
+    title: 'Flame-Grilled Half Chicken',
+    tag: 'Hearty Meals',
+  },
+];
