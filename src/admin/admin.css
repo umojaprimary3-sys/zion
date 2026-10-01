@@ -1,0 +1,1067 @@
+/* Scoped styles for Zion Admin — does not affect public site */
+.zion-admin {
+  --za-bg: #efe2cf;
+  --za-card: #f8f2e6;
+  --za-in: #ffffff;
+  --za-dark: #1c1611;
+  --za-dark2: #2b241c;
+  --za-green: #22c55e;
+  --za-gd: #16a34a;
+  --za-terra: #e8b374;
+  --za-orange: #e2a15a;
+  --za-tx: #241c15;
+  --za-mu: #6b6357;
+  --za-mint: #c9ead9;
+  --za-ln: rgba(36, 28, 21, 0.13);
+  --za-red: #d9442f;
+  --za-sh: 0 6px 22px rgba(28, 22, 17, 0.08);
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--za-bg);
+  color: var(--za-tx);
+  line-height: 1.5;
+  font-size: 14px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+@media (prefers-color-scheme: dark) {
+  .zion-admin:not([data-theme="light"]) {
+    --za-bg: #15100c;
+    --za-card: #231b14;
+    --za-in: #2d241b;
+    --za-tx: #f3ebdd;
+    --za-mu: #a89f90;
+    --za-mint: #1d3a2a;
+    --za-ln: rgba(255, 255, 255, 0.13);
+  }
+}
+
+.zion-admin[data-theme="dark"] {
+  --za-bg: #15100c;
+  --za-card: #231b14;
+  --za-in: #2d241b;
+  --za-tx: #f3ebdd;
+  --za-mu: #a89f90;
+  --za-mint: #1d3a2a;
+  --za-ln: rgba(255, 255, 255, 0.13);
+}
+
+.zion-admin *,
+.zion-admin *::before,
+.zion-admin *::after {
+  box-sizing: border-box;
+}
+
+.zion-admin h1,
+.zion-admin h2,
+.zion-admin h3,
+.zion-admin .za-f {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.zion-admin button {
+  font: inherit;
+  cursor: pointer;
+  border: 0;
+  color: inherit;
+  background: none;
+  text-align: left;
+}
+
+.zion-admin img {
+  max-width: 100%;
+  display: block;
+}
+
+.zion-admin .za-app {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  min-height: 100vh;
+  gap: 16px;
+  padding: 16px;
+}
+
+.zion-admin aside.za-aside {
+  background: var(--za-dark);
+  color: #fff;
+  border-radius: 28px;
+  padding: 22px 14px;
+  position: sticky;
+  top: 16px;
+  height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.zion-admin .za-logo {
+  padding: 4px 10px 16px;
+}
+
+.zion-admin .za-logo b {
+  font: 600 22px/1.1 'Fredoka', cursive, sans-serif;
+  letter-spacing: 1px;
+  display: block;
+  color: #fff;
+}
+
+.zion-admin .za-logo span {
+  font-size: 11px;
+  color: var(--za-terra);
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+
+.zion-admin .za-grp {
+  font-size: 10.5px;
+  letter-spacing: 1.5px;
+  color: #8a7f70;
+  padding: 12px 12px 2px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.zion-admin .za-tab {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  border-radius: 16px;
+  color: #cfc6b8;
+  text-align: left;
+  width: 100%;
+  font-weight: 500;
+  transition: 0.15s ease;
+  user-select: none;
+}
+
+.zion-admin .za-tab:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.zion-admin .za-tab.on {
+  background: var(--za-green);
+  color: #0c1a10;
+  font-weight: 700;
+}
+
+.zion-admin .za-tab i {
+  font-style: normal;
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.zion-admin .za-tab em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.zion-admin .za-tab.on em {
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.zion-admin .za-side-foot {
+  margin-top: auto;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--za-dark2);
+  font-size: 12px;
+  color: #cfc6b8;
+}
+
+.zion-admin .za-side-foot b {
+  color: #fff;
+  display: block;
+}
+
+.zion-admin main.za-main {
+  min-width: 0;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.zion-admin .za-top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: var(--za-dark);
+  color: #fff;
+  border-radius: 22px;
+  padding: 12px 14px 12px 22px;
+  margin-bottom: 18px;
+  box-shadow: var(--za-sh);
+}
+
+.zion-admin .za-top h1 {
+  font-size: 22px;
+  flex: 1;
+  min-width: 150px;
+  margin: 0;
+  color: #fff;
+}
+
+.zion-admin .za-top small {
+  display: block;
+  font: 400 12px 'Inter', sans-serif;
+  color: #cfc6b8;
+  margin-top: 2px;
+}
+
+.zion-admin .za-st {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #cfc6b8;
+}
+
+.zion-admin .za-st::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--za-green);
+}
+
+.zion-admin .za-st.d::before {
+  background: var(--za-orange);
+  animation: za-pulse 1s infinite;
+}
+
+@keyframes za-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.zion-admin .za-btn {
+  padding: 10px 18px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 13px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s ease;
+  min-height: 40px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.zion-admin .za-b1 {
+  background: var(--za-green);
+  color: #0c1a10;
+}
+
+.zion-admin .za-b1:hover {
+  background: #3ddb78;
+}
+
+.zion-admin .za-b2 {
+  background: var(--za-dark2);
+  color: #fff;
+}
+
+.zion-admin .za-b2:hover {
+  background: #3a3126;
+}
+
+.zion-admin .za-b3 {
+  background: var(--za-in);
+  border: 1px solid var(--za-ln);
+  color: var(--za-tx);
+}
+
+.zion-admin .za-b3:hover {
+  border-color: var(--za-gd);
+}
+
+.zion-admin .za-bd {
+  color: var(--za-red);
+}
+
+.zion-admin .za-sec {
+  background: var(--za-card);
+  border-radius: 24px;
+  padding: 22px;
+  margin-bottom: 18px;
+}
+
+.zion-admin .za-sh {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.zion-admin .za-sh > div {
+  flex: 1;
+  min-width: 200px;
+}
+
+.zion-admin .za-sh h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.zion-admin .za-sh p {
+  font-size: 12.5px;
+  color: var(--za-mu);
+  margin-top: 4px;
+}
+
+.zion-admin .za-eb {
+  color: #b7791f;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.zion-admin .za-g2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.zion-admin .za-g3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.zion-admin .za-fld {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.zion-admin .za-fld.w {
+  grid-column: 1 / -1;
+}
+
+.zion-admin .za-fld > label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.zion-admin .za-fld > label span {
+  color: var(--za-mu);
+  font-weight: 400;
+}
+
+.zion-admin input,
+.zion-admin textarea,
+.zion-admin select {
+  width: 100%;
+  padding: 10px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--za-ln);
+  background: var(--za-in);
+  color: var(--za-tx);
+  font: inherit;
+  outline: 0;
+  min-height: 42px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.zion-admin textarea {
+  resize: vertical;
+  min-height: 74px;
+}
+
+.zion-admin input:focus,
+.zion-admin textarea:focus,
+.zion-admin select:focus {
+  border-color: var(--za-gd);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.22);
+}
+
+.zion-admin input[type="color"] {
+  padding: 3px;
+  width: 52px;
+  cursor: pointer;
+}
+
+.zion-admin .za-pre {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.zion-admin .za-pre .za-px {
+  position: relative;
+  width: 74px;
+  height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--za-terra), var(--za-orange));
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+}
+
+.zion-admin .za-px img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.zion-admin .za-pre .za-col {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.zion-admin .za-pre input {
+  min-width: 0;
+}
+
+.zion-admin .za-item {
+  background: var(--za-in);
+  border-radius: 18px;
+  margin-bottom: 10px;
+  border: 1px solid var(--za-ln);
+  overflow: hidden;
+}
+
+.zion-admin .za-item[open] {
+  border-color: var(--za-gd);
+  box-shadow: var(--za-sh);
+}
+
+.zion-admin .za-item > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  min-height: 64px;
+}
+
+.zion-admin .za-item > summary::-webkit-details-marker {
+  display: none;
+}
+
+.zion-admin .za-item .za-px {
+  width: 52px;
+  height: 44px;
+  border-radius: 11px;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(135deg, var(--za-terra), var(--za-orange));
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.zion-admin .za-item .za-t {
+  flex: 1;
+  min-width: 0;
+}
+
+.zion-admin .za-item .za-t b {
+  display: block;
+  font: 600 15px 'Fredoka', cursive, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zion-admin .za-item .za-t span {
+  font-size: 12px;
+  color: var(--za-mu);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.zion-admin .za-pill {
+  background: var(--za-green);
+  color: #0c1a10;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.zion-admin .za-pill.o {
+  background: var(--za-orange);
+  color: #2a1c0d;
+}
+
+.zion-admin .za-pill.r {
+  background: var(--za-red);
+  color: #fff;
+}
+
+.zion-admin .za-pill.x {
+  background: var(--za-ln);
+  color: var(--za-tx);
+}
+
+.zion-admin .za-chev {
+  transition: transform 0.2s;
+  color: var(--za-mu);
+}
+
+.zion-admin .za-item[open] .za-chev {
+  transform: rotate(180deg);
+}
+
+.zion-admin .za-body {
+  padding: 6px 16px 16px;
+  border-top: 1px dashed var(--za-ln);
+}
+
+.zion-admin .za-body .za-g2,
+.zion-admin .za-body .za-g3 {
+  margin-top: 12px;
+}
+
+.zion-admin .za-acts {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.zion-admin .za-acts .za-btn {
+  padding: 6px 12px;
+  min-height: 34px;
+  font-size: 12px;
+}
+
+.zion-admin .za-add {
+  width: 100%;
+  border: 2px dashed var(--za-ln);
+  border-radius: 18px;
+  padding: 14px;
+  color: var(--za-gd);
+  font-weight: 700;
+  background: transparent;
+  transition: 0.15s;
+  text-align: center;
+  cursor: pointer;
+}
+
+.zion-admin .za-add:hover {
+  border-color: var(--za-gd);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.zion-admin .za-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.zion-admin .za-chip {
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: var(--za-in);
+  border: 1px solid var(--za-ln);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--za-tx);
+  transition: 0.15s;
+}
+
+.zion-admin .za-chip.on {
+  background: var(--za-dark);
+  color: #fff;
+  border-color: var(--za-dark);
+}
+
+.zion-admin .za-chips input {
+  max-width: 230px;
+  border-radius: 99px;
+}
+
+.zion-admin .za-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 7px;
+  border-radius: 12px;
+  border: 1px solid var(--za-ln);
+  background: var(--za-in);
+}
+
+.zion-admin .za-tags:focus-within {
+  border-color: var(--za-gd);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.22);
+}
+
+.zion-admin .za-tg {
+  background: var(--za-mint);
+  color: #12321f;
+  border-radius: 99px;
+  padding: 3px 6px 3px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.zion-admin .za-tg button {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zion-admin .za-tags input {
+  border: 0;
+  box-shadow: none !important;
+  flex: 1;
+  min-width: 120px;
+  min-height: 28px;
+  padding: 2px 6px;
+  background: transparent;
+}
+
+.zion-admin .za-sw {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 42px;
+  cursor: pointer;
+}
+
+.zion-admin .za-sw input {
+  display: none;
+}
+
+.zion-admin .za-sw s {
+  width: 40px;
+  height: 23px;
+  border-radius: 99px;
+  background: var(--za-ln);
+  position: relative;
+  transition: 0.2s;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.zion-admin .za-sw s::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  transition: 0.2s;
+}
+
+.zion-admin .za-sw input:checked + s {
+  background: var(--za-green);
+}
+
+.zion-admin .za-sw input:checked + s::after {
+  left: 20px;
+}
+
+.zion-admin .za-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.zion-admin .za-stars button {
+  font-size: 22px;
+  color: var(--za-ln);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.zion-admin .za-stars button.on {
+  color: #f5b400;
+}
+
+.zion-admin .za-hint {
+  font-size: 12px;
+  color: var(--za-mu);
+  background: rgba(232, 179, 116, 0.22);
+  border-radius: 12px;
+  padding: 9px 12px;
+  margin-bottom: 14px;
+}
+
+/* Overview hero & components */
+.zion-admin .za-hero {
+  background: var(--za-dark);
+  color: #fff;
+  border-radius: 24px;
+  padding: 28px;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.zion-admin .za-hero h2 {
+  font-size: 30px;
+  line-height: 1.15;
+  max-width: 520px;
+  color: #fff;
+}
+
+.zion-admin .za-hero p {
+  color: #cfc6b8;
+  max-width: 480px;
+  margin-top: 8px;
+}
+
+.zion-admin .za-hero .za-ring {
+  position: absolute;
+  right: 26px;
+  top: 22px;
+  width: 104px;
+  height: 104px;
+}
+
+.zion-admin .za-oc {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.zion-admin .za-card {
+  background: var(--za-card);
+  border-radius: 22px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: 0.2s;
+}
+
+.zion-admin .za-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--za-sh);
+}
+
+.zion-admin .za-card h3 {
+  font-size: 17px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+}
+
+.zion-admin .za-card .za-ck {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: var(--za-mint);
+  color: #12321f;
+}
+
+.zion-admin .za-card .za-ck.w {
+  background: #f7d9a8;
+  color: #5c3a05;
+}
+
+.zion-admin .za-card ul {
+  list-style: none;
+  font-size: 12.5px;
+  color: var(--za-mu);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.zion-admin .za-card li {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed var(--za-ln);
+  padding: 3px 0;
+}
+
+.zion-admin .za-card li b {
+  color: var(--za-tx);
+}
+
+.zion-admin .za-card small {
+  color: var(--za-mu);
+  font-size: 11.5px;
+}
+
+.zion-admin .za-ap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--za-ln);
+  font-size: 13px;
+}
+
+.zion-admin .za-ap span {
+  flex: 1;
+}
+
+.zion-admin .za-bp {
+  background: var(--za-dark);
+  border-radius: 20px;
+  padding: 20px 22px;
+  color: #fff;
+  margin-bottom: 14px;
+}
+
+.zion-admin .za-bp .za-eb {
+  color: var(--za-terra);
+}
+
+.zion-admin .za-bp h3 {
+  font-size: 26px;
+  line-height: 1.2;
+  margin: 4px 0;
+  color: #fff;
+}
+
+.zion-admin .za-bp p {
+  color: #cfc6b8;
+  font-size: 13px;
+  max-width: 560px;
+}
+
+.zion-admin .za-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.zion-admin .za-kpi {
+  background: var(--za-card);
+  border-radius: 20px;
+  padding: 16px;
+  text-align: left;
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.zion-admin .za-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--za-sh);
+}
+
+.zion-admin .za-kpi b {
+  font: 600 24px 'Fredoka', cursive, sans-serif;
+  display: block;
+}
+
+.zion-admin .za-kpi span {
+  font-size: 12px;
+  color: var(--za-mu);
+}
+
+.zion-admin .za-kpi.hot {
+  background: var(--za-orange);
+  color: #2a1c0d;
+}
+
+.zion-admin .za-kpi.hot span {
+  color: #5c3a05;
+}
+
+.zion-admin .za-bars {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.zion-admin .za-bars div {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--za-mu);
+}
+
+.zion-admin .za-bars i {
+  display: block;
+  background: var(--za-green);
+  border-radius: 8px 8px 3px 3px;
+  min-height: 4px;
+  margin-bottom: 4px;
+}
+
+.zion-admin .za-lk {
+  position: fixed;
+  inset: 0;
+  background: var(--za-dark);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.zion-admin .za-lk .za-mb {
+  width: min(380px, 100%);
+  text-align: center;
+}
+
+.zion-admin .za-mo {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 22, 17, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 60;
+  display: none;
+  place-items: center;
+  padding: 16px;
+}
+
+.zion-admin .za-mo.on {
+  display: grid;
+}
+
+.zion-admin .za-mb {
+  background: var(--za-card);
+  border-radius: 24px;
+  padding: 22px;
+  width: min(640px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.zion-admin .za-mb textarea {
+  min-height: 240px;
+  font: 12px monospace;
+  margin: 12px 0;
+}
+
+.zion-admin .za-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translate(-50%, 90px);
+  background: var(--za-dark);
+  color: #fff;
+  border: 1px solid var(--za-orange);
+  border-radius: 99px;
+  padding: 11px 20px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  z-index: 70;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 13.5px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.zion-admin .za-toast.on {
+  transform: translate(-50%, 0);
+}
+
+.zion-admin .za-toast button {
+  color: var(--za-green);
+  font-weight: 700;
+}
+
+/* Mobile layout */
+@media (max-width: 860px) {
+  .zion-admin .za-grp {
+    display: none;
+  }
+  .zion-admin .za-app {
+    grid-template-columns: 1fr;
+    padding: 10px 10px 84px;
+  }
+  .zion-admin aside.za-aside {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    height: auto;
+    flex-direction: row;
+    border-radius: 22px 22px 0 0;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    z-index: 50;
+    overflow-x: auto;
+    gap: 2px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  }
+  .zion-admin aside.za-aside .za-logo,
+  .zion-admin aside.za-aside .za-side-foot {
+    display: none;
+  }
+  .zion-admin .za-tab {
+    flex-direction: column;
+    gap: 1px;
+    padding: 6px 10px;
+    min-width: 64px;
+    width: auto;
+    font-size: 10.5px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .zion-admin .za-tab em {
+    display: none;
+  }
+  .zion-admin .za-g2,
+  .zion-admin .za-g3 {
+    grid-template-columns: 1fr;
+  }
+  .zion-admin .za-sec {
+    padding: 16px;
+    border-radius: 20px;
+  }
+  .zion-admin .za-hero .za-ring {
+    display: none;
+  }
+  .zion-admin .za-hero h2 {
+    font-size: 24px;
+  }
+  .zion-admin .za-top h1 {
+    font-size: 19px;
+  }
+  .zion-admin .za-btn.za-hm {
+    display: none;
+  }
+}

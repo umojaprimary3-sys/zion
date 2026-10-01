@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PageId, ReviewItem } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
 import { REVIEWS_DATA, GALLERY_IMAGES } from '../data/reviewsData';
+import { useContent, saveReviewToStore } from '../data/store';
 
 interface ReviewsGalleryPageProps {
   onNavigate: (page: PageId) => void;
@@ -12,7 +13,9 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
   onNavigate,
   onOpenOrderModal,
 }) => {
-  const [reviewsList, setReviewsList] = useState<ReviewItem[]>(REVIEWS_DATA);
+  const content = useContent();
+  const banner = content.banners?.reviews;
+
   const [authorName, setAuthorName] = useState('');
   const [authorLocation, setAuthorLocation] = useState('');
   const [ratingVal, setRatingVal] = useState(5);
@@ -21,19 +24,60 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
-  const handleAddReview = (e: React.FormEvent) => {
+  // Approved reviews from store
+  const reviewsList = useMemo<ReviewItem[]>(() => {
+    if (content.reviews && content.reviews.length > 0) {
+      const approved = content.reviews.filter((r) => r.status === 'approved');
+      if (approved.length > 0) {
+        return approved.map((r, idx) => ({
+          id: r.id || `rev-${idx}`,
+          author: r.author,
+          location: r.location || 'Mbeya',
+          rating: r.rating,
+          comment: r.comment,
+          date: r.date || 'Recent',
+          occasion: r.occasion || 'Customer Experience',
+          verified: r.verified ?? true,
+        }));
+      }
+    }
+    return REVIEWS_DATA;
+  }, [content.reviews]);
+
+  // Gallery items from store
+  const galleryList = useMemo(() => {
+    if (content.gallery && content.gallery.length > 0) {
+      return content.gallery.map((g, idx) => ({
+        id: `gal-${idx}`,
+        src: g.src,
+        title: g.title,
+        tag: g.tag,
+      }));
+    }
+    return GALLERY_IMAGES;
+  }, [content.gallery]);
+
+  const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newRev: ReviewItem = {
-      id: `rev-custom-${Date.now()}`,
-      author: authorName || 'Anonymous',
-      location: authorLocation || 'Mbeya',
-      rating: ratingVal,
-      comment: commentText,
-      date: 'Just now',
-      occasion: occasionText,
-      verified: true,
-    };
-    setReviewsList([newRev, ...reviewsList]);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    
+    // Save review to Supabase with status "pending"
+    try {
+      await saveReviewToStore({
+        author: authorName || 'Anonymous',
+        location: authorLocation || 'Mbeya',
+        rating: ratingVal,
+        comment: commentText,
+        occasion: occasionText,
+        date: todayStr,
+        status: 'pending',
+        verified: true,
+        featured: false,
+      });
+    } catch (err: unknown) {
+      console.warn('Could not save review to Supabase:', err);
+    }
+
     setAuthorName('');
     setAuthorLocation('');
     setCommentText('');
@@ -57,11 +101,11 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
 
           <div className="page-title-section">
             <div className="eyebrow" style={{ color: 'var(--terracotta)' }}>
-              TESTIMONIALS & MOMENTS
+              {banner?.eyebrow || 'TESTIMONIALS & MOMENTS'}
             </div>
-            <h1>What Mbeya Is Saying</h1>
+            <h1>{banner?.title || 'What Mbeya Is Saying'}</h1>
             <p>
-              Real stories from birthday celebrations, office lunches, and weekend gatherings with Zion Cakes & Bites.
+              {banner?.text || 'Real stories from birthday celebrations, office lunches, and weekend gatherings with Zion Cakes & Bites.'}
             </p>
           </div>
         </div>
@@ -95,14 +139,15 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
                   gap: '6px',
                 }}
               >
-                4.1 <span style={{ fontSize: '24px', color: 'var(--star)' }}>★★★★★</span>
+                {content.biz?.rating || '4.1'}{' '}
+                <span style={{ fontSize: '24px', color: 'var(--star)' }}>★★★★★</span>
               </div>
               <div>
                 <b style={{ fontSize: '15px', color: 'var(--text-dark)' }}>
-                  Loved by hundreds in Mbeya
+                  {content.home?.rating?.label || 'Loved by hundreds in Mbeya'}
                 </b>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  87 verified Google Reviews · Over 6,890+ happy cake lovers
+                  {content.biz?.reviewsCount ? `${content.biz.reviewsCount} verified Google Reviews` : '87 verified Google Reviews'} · Over 6,890+ happy cake lovers
                 </p>
               </div>
             </div>
@@ -178,75 +223,79 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
                   <div className="form-group">
                     <label style={{ color: '#cfc6b8' }}>Rating</label>
                     <select
-                      className="form-select"
+                      className="form-input"
                       value={ratingVal}
                       onChange={(e) => setRatingVal(Number(e.target.value))}
                     >
                       <option value={5}>★★★★★ (5/5) Outstanding</option>
                       <option value={4}>★★★★☆ (4/5) Very Good</option>
                       <option value={3}>★★★☆☆ (3/5) Good</option>
+                      <option value={2}>★★☆☆☆ (2/5) Fair</option>
+                      <option value={1}>★☆☆☆☆ (1/5) Poor</option>
                     </select>
                   </div>
 
                   <div className="form-group">
-                    <label style={{ color: '#cfc6b8' }}>Occasion</label>
+                    <label style={{ color: '#cfc6b8' }}>Occasion / Item Ordered</label>
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="e.g., Birthday Cake / Midday Lunch / Coffee"
+                      placeholder="e.g., Birthday Cake, Family Lunch"
                       value={occasionText}
                       onChange={(e) => setOccasionText(e.target.value)}
                     />
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label style={{ color: '#cfc6b8' }}>Your Review *</label>
+                <div className="form-group" style={{ marginTop: '16px' }}>
+                  <label style={{ color: '#cfc6b8' }}>Your Review / Experience</label>
                   <textarea
-                    className="form-textarea"
-                    rows={3}
-                    placeholder="How was the flavor, delivery, or café ambience?"
+                    rows={4}
+                    className="form-input"
+                    placeholder="Share what you loved about our food, cake texture, or customer delivery service..."
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     required
+                    style={{ resize: 'vertical' }}
                   />
                 </div>
 
                 <button
                   type="submit"
                   className="btn-solid"
-                  style={{ padding: '12px 24px' }}
+                  style={{ marginTop: '16px', background: 'var(--green)', color: '#000' }}
                 >
-                  Submit Review
+                  Submit Public Review
                 </button>
               </form>
             </div>
           )}
 
-          {/* REVIEWS GRID (REUSING EXACT HOMEPAGE REVIEW CARD STYLE) */}
-          <h2 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '28px', marginBottom: '24px', textAlign: 'center' }}>
-            Customer Feedback
-          </h2>
+          {/* REVIEWS GRID */}
           <div
-            className="reviews-grid"
-            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', marginBottom: '60px' }}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: '20px',
+              marginBottom: '60px',
+            }}
           >
-            {reviewsList.map((rev) => (
-              <div className="review-card" key={rev.id}>
-                <div className="stars">
-                  {'★'.repeat(rev.rating)}
-                  {'☆'.repeat(5 - rev.rating)}
+            {reviewsList.map((review) => (
+              <div key={review.id} className="review-card">
+                <div className="review-card-stars">
+                  {'★'.repeat(review.rating)}
+                  {'☆'.repeat(5 - review.rating)}
                 </div>
-                <p>"{rev.comment}"</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p className="review-card-comment">"{review.comment}"</p>
+                <div className="review-card-meta">
                   <div>
-                    <b>{rev.author}</b>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      📍 {rev.location} {rev.occasion ? `· ${rev.occasion}` : ''}
+                    <span className="review-card-author">{review.author}</span>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                      {review.location} · {review.occasion}
                     </div>
                   </div>
                   <span style={{ fontSize: '11px', color: 'var(--green-dark)', fontWeight: 600 }}>
@@ -273,7 +322,7 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
               marginBottom: '50px',
             }}
           >
-            {GALLERY_IMAGES.map((img) => (
+            {galleryList.map((img) => (
               <div
                 key={img.id}
                 style={{

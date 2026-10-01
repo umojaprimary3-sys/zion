@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { PageId } from '../types';
 import { RESTAURANT_INFO } from '../data/locationData';
+import { useContent } from '../data/store';
+import { useCustomerAuth } from '../context/CustomerAuthContext';
 
 interface HeaderNavProps {
   currentPage: PageId;
   onNavigate: (page: PageId) => void;
   onOpenOrderModal: () => void;
+  onOpenAuthModal?: (mode?: 'login' | 'register') => void;
   isHeroMode?: boolean;
 }
 
@@ -13,9 +16,12 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   currentPage,
   onNavigate,
   onOpenOrderModal,
+  onOpenAuthModal,
   isHeroMode = false,
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const content = useContent();
+  const { user, member, isLoggedIn, signOut } = useCustomerAuth();
 
   const handleNavClick = (page: PageId) => {
     onNavigate(page);
@@ -23,14 +29,18 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const navLabels = content.pg?.nav || [];
+
   const navItems: { id: PageId; label: string; icon: string; desc?: string }[] = [
-    { id: 'home', label: 'Home', icon: '⌂', desc: 'Fresh daily highlights & overview' },
-    { id: 'menu', label: 'Full Menu', icon: '🍰', desc: 'Cakes, pizza, chicken, drinks' },
-    { id: 'custom-cakes', label: 'Custom Cake Orders', icon: '🎂', desc: 'Flavors, sizes & occasions' },
-    { id: 'about', label: 'About & Location', icon: '📍', desc: 'Store hours, Wi-Fi & dine-in' },
-    { id: 'contact', label: 'Contact & Delivery', icon: '📞', desc: 'Mbeya delivery zones & fees' },
-    { id: 'reviews', label: 'Reviews & Moments', icon: '★', desc: 'Customer stories & gallery' },
+    { id: 'home', label: navLabels[0]?.label || 'Home', icon: '⌂', desc: navLabels[0]?.desc || 'Fresh daily highlights & overview' },
+    { id: 'menu', label: navLabels[1]?.label || 'Full Menu', icon: '🍰', desc: navLabels[1]?.desc || 'Cakes, pizza, chicken, drinks' },
+    { id: 'custom-cakes', label: navLabels[2]?.label || 'Custom Cake Orders', icon: '🎂', desc: navLabels[2]?.desc || 'Flavors, sizes & occasions' },
+    { id: 'about', label: navLabels[3]?.label || 'About & Location', icon: '📍', desc: navLabels[3]?.desc || 'Store hours, Wi-Fi & dine-in' },
+    { id: 'contact', label: navLabels[4]?.label || 'Contact & Delivery', icon: '📞', desc: navLabels[4]?.desc || 'Mbeya delivery zones & fees' },
+    { id: 'reviews', label: navLabels[5]?.label || 'Reviews & Moments', icon: '★', desc: navLabels[5]?.desc || 'Customer stories & gallery' },
   ];
+
+  const customerShortName = member?.name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || 'Account';
 
   return (
     <>
@@ -53,7 +63,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             onClick={() => handleNavClick('home')}
             id="nav-pill-home"
           >
-            Home
+            {navLabels[0]?.label || 'Home'}
           </button>
           <button
             type="button"
@@ -61,7 +71,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             onClick={() => handleNavClick('menu')}
             id="nav-pill-menu"
           >
-            Menu
+            {navLabels[1]?.label || 'Menu'}
           </button>
           <button
             type="button"
@@ -69,7 +79,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             onClick={() => handleNavClick('custom-cakes')}
             id="nav-pill-custom-cakes"
           >
-            Cake Orders
+            {navLabels[2]?.label ? navLabels[2].label.replace('Custom ', '') : 'Cake Orders'}
           </button>
           <button
             type="button"
@@ -77,7 +87,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             onClick={() => handleNavClick('about')}
             id="nav-pill-about"
           >
-            About & Location
+            {navLabels[3]?.label || 'About & Location'}
           </button>
           <button
             type="button"
@@ -85,7 +95,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             onClick={() => handleNavClick('contact')}
             id="nav-pill-contact"
           >
-            Contact
+            {navLabels[4]?.label ? navLabels[4].label.split('&')[0].trim() : 'Contact'}
           </button>
           <button
             type="button"
@@ -93,19 +103,77 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             onClick={() => handleNavClick('reviews')}
             id="nav-pill-reviews"
           >
-            Reviews
+            {navLabels[5]?.label ? navLabels[5].label.split('&')[0].trim() : 'Reviews'}
           </button>
+
+          {isLoggedIn ? (
+            <button
+              type="button"
+              className={currentPage === 'account' ? 'active' : ''}
+              onClick={() => handleNavClick('account')}
+              id="nav-pill-account"
+              style={{
+                color: currentPage === 'account' ? '#fff' : 'var(--terracotta)',
+                fontWeight: 600,
+              }}
+            >
+              👤 {customerShortName}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={currentPage === 'login' || currentPage === 'register' ? 'active' : ''}
+              onClick={() => (onOpenAuthModal ? onOpenAuthModal('login') : handleNavClick('login'))}
+              id="nav-pill-login"
+              style={{ opacity: 0.9 }}
+            >
+              Sign In
+            </button>
+          )}
         </div>
 
-        <button
-          className="order-btn"
-          id="header-order-btn"
-          type="button"
-          onClick={onOpenOrderModal}
-        >
-          <span>Order Now</span>
-          <span>↗</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {isLoggedIn ? (
+            <button
+              type="button"
+              onClick={() => handleNavClick('account')}
+              className={currentPage === 'account' ? 'order-btn' : 'menu-btn'}
+              style={{
+                fontSize: '13px',
+                padding: '9px 16px',
+                background: currentPage === 'account' ? 'var(--green)' : 'rgba(255,255,255,0.12)',
+                color: currentPage === 'account' ? '#0c1a10' : '#fff',
+              }}
+              title="My Account & Orders"
+            >
+              <span>👤 {customerShortName}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => (onOpenAuthModal ? onOpenAuthModal('login') : handleNavClick('login'))}
+              className="menu-btn"
+              style={{
+                fontSize: '13px',
+                padding: '9px 14px',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+              }}
+            >
+              <span>Login</span>
+            </button>
+          )}
+
+          <button
+            className="order-btn"
+            id="header-order-btn"
+            type="button"
+            onClick={onOpenOrderModal}
+          >
+            <span>{content.pg?.orderBtn || 'Order Now'}</span>
+            <span>↗</span>
+          </button>
+        </div>
       </div>
 
       {/* Mobile Slide Drawer */}
@@ -139,10 +207,10 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                       color: '#fff',
                     }}
                   >
-                    ZION
+                    {content.biz?.name?.split(' ')[0] || 'ZION'}
                   </h3>
                   <p style={{ fontSize: '12px', color: 'var(--terracotta)', fontWeight: 500 }}>
-                    Cakes & Bites · Mbeya
+                    {content.biz?.name?.includes('Cakes') ? 'Cakes & Bites · Mbeya' : (content.biz?.name || 'Cakes & Bites · Mbeya')}
                   </p>
                 </div>
                 <button
@@ -167,7 +235,122 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 </button>
               </div>
 
-              <div className="drawer-links" id="drawer-links-container" style={{ marginTop: '20px' }}>
+              {/* Customer Account Strip in Mobile Drawer */}
+              <div
+                style={{
+                  marginTop: '16px',
+                  background: 'rgba(255,255,255,0.06)',
+                  borderRadius: '16px',
+                  padding: '14px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+              >
+                {isLoggedIn ? (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '18px' }}>👤</span>
+                        <div>
+                          <div style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>
+                            {member?.name || user?.user_metadata?.full_name || 'Customer'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#cfc6b8' }}>{user?.email}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleNavClick('account')}
+                        style={{
+                          flex: 1,
+                          background: 'var(--green)',
+                          color: '#0c1a10',
+                          border: 'none',
+                          padding: '7px 10px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        My Account & Orders
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setDrawerOpen(false);
+                          await signOut();
+                          handleNavClick('home');
+                        }}
+                        style={{
+                          background: 'rgba(255,255,255,0.12)',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '7px 10px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#cfc6b8', marginBottom: '8px' }}>
+                      Customer Account
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDrawerOpen(false);
+                          if (onOpenAuthModal) onOpenAuthModal('login');
+                          else handleNavClick('login');
+                        }}
+                        style={{
+                          flex: 1,
+                          background: 'rgba(255,255,255,0.15)',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Login
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDrawerOpen(false);
+                          if (onOpenAuthModal) onOpenAuthModal('register');
+                          else handleNavClick('register');
+                        }}
+                        style={{
+                          flex: 1,
+                          background: 'var(--terracotta)',
+                          color: 'var(--dark)',
+                          border: 'none',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Create Account
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="drawer-links" id="drawer-links-container" style={{ marginTop: '16px' }}>
                 {navItems.map((item) => (
                   <button
                     key={item.id}
@@ -175,20 +358,20 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                     className={`drawer-link-btn ${currentPage === item.id ? 'active' : ''}`}
                     onClick={() => handleNavClick(item.id)}
                     id={`drawer-btn-${item.id}`}
-                    style={{ minHeight: '52px', padding: '14px 18px' }}
+                    style={{ minHeight: '48px', padding: '12px 16px' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <span style={{ fontSize: '20px', width: '24px', textAlign: 'center' }}>{item.icon}</span>
+                      <span style={{ fontSize: '18px', width: '24px', textAlign: 'center' }}>{item.icon}</span>
                       <div>
-                        <div style={{ fontSize: '16px', fontWeight: 600 }}>{item.label}</div>
+                        <div style={{ fontSize: '15px', fontWeight: 600 }}>{item.label}</div>
                         {item.desc && (
-                          <div style={{ fontSize: '11.5px', opacity: 0.75, fontWeight: 400 }}>
+                          <div style={{ fontSize: '11px', opacity: 0.75, fontWeight: 400 }}>
                             {item.desc}
                           </div>
                         )}
                       </div>
                     </div>
-                    <span style={{ fontSize: '16px' }}>→</span>
+                    <span style={{ fontSize: '15px' }}>→</span>
                   </button>
                 ))}
               </div>
@@ -198,7 +381,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               style={{
                 borderTop: '1px solid rgba(255,255,255,0.12)',
                 paddingTop: '20px',
-                marginTop: '24px',
+                marginTop: '20px',
               }}
             >
               <button
@@ -231,9 +414,9 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                   lineHeight: '1.5',
                 }}
               >
-                📍 Njia Panda ya Hospitali, Mbeya
+                📍 {content.biz?.address1 || RESTAURANT_INFO.location}, {content.biz?.address2 || 'Mbeya'}
                 <br />
-                📞 +255 768 000 111
+                📞 {content.biz?.phone || RESTAURANT_INFO.phoneDisplay}
               </div>
             </div>
           </div>

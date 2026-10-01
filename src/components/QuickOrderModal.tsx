@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RESTAURANT_INFO, DELIVERY_ZONES } from '../data/locationData';
 import { PageId } from '../types';
+import { useContent, saveOrderToStore, generateOrderId, formatWhatsAppNumber } from '../data/store';
+import { useCustomerAuth } from '../context/CustomerAuthContext';
 
 interface QuickOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigate: (page: PageId) => void;
   initialItemName?: string;
+  onOpenAuthModal?: (mode?: 'login' | 'register') => void;
 }
 
 export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
@@ -14,19 +17,55 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
   onClose,
   onNavigate,
   initialItemName,
+  onOpenAuthModal,
 }) => {
+  const content = useContent();
+  const { user, member, isLoggedIn, refreshCustomerData } = useCustomerAuth();
+  const zonesList = content.zones && content.zones.length > 0 ? content.zones : DELIVERY_ZONES;
+
   const [orderType, setOrderType] = useState<'delivery' | 'pickup' | 'custom-cake'>('delivery');
   const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [orderNotes, setOrderNotes] = useState(initialItemName ? `1x ${initialItemName}` : '');
-  const [selectedZone, setSelectedZone] = useState(DELIVERY_ZONES[0].name);
+  const [selectedZone, setSelectedZone] = useState(zonesList[0]?.name || 'Njia Panda & Hospitali Zone');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  // Prefill details if customer is logged in
+  useEffect(() => {
+    if (isOpen) {
+      if (initialItemName) {
+        setOrderNotes(`1x ${initialItemName}`);
+      }
+      if (isLoggedIn) {
+        if (!customerName) {
+          setCustomerName(member?.name || user?.user_metadata?.full_name || '');
+        }
+        if (!customerPhone) {
+          setCustomerPhone(member?.phone || user?.user_metadata?.phone || '');
+        }
+        if (member?.area) {
+          // If member has saved area, match zone if possible
+          const matched = zonesList.find((z) => member.area.toLowerCase().includes(z.name.toLowerCase()));
+          if (matched) setSelectedZone(matched.name);
+        }
+      }
+    }
+  }, [isOpen, isLoggedIn, member, user, initialItemName, zonesList]);
 
   if (!isOpen) return null;
 
-  const handleWhatsAppSend = (e: React.FormEvent) => {
+  const handleWhatsAppSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    const nameStr = customerName.trim() || 'Valued Customer';
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    const nameStr = customerName.trim() || member?.name || 'Valued Customer';
     let text = `Hello Zion Cakes & Bites Mbeya!\n\n`;
     text += `*Customer:* ${nameStr}\n`;
+    if (customerPhone.trim()) {
+      text += `*Phone:* ${customerPhone.trim()}\n`;
+    }
     text += `*Order Type:* ${orderType.toUpperCase()}\n`;
     if (orderType === 'delivery') {
       text += `*Delivery Location:* ${selectedZone}\n`;
@@ -34,8 +73,39 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
     text += `*Order Items / Request:*\n${orderNotes || 'Please share your daily specials'}\n\n`;
     text += `Sent from Zion Cakes & Bites App`;
 
+    // Save order record to Supabase store
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const orderId = generateOrderId(content.cfg?.prefix || 'ZN', content.orders || []);
+
+    try {
+      await saveOrderToStore({
+        id: orderId,
+        user_id: user?.id,
+        member_id: member?.id,
+        type: orderType === 'custom-cake' ? 'cake' : orderType,
+        status: 'new',
+        name: nameStr,
+        phone: customerPhone.trim(),
+        email: user?.email || '',
+        zone: orderType === 'delivery' ? selectedZone : '—',
+        items: orderNotes || 'Daily specials inquiry',
+        total: 0,
+        pay: 'unpaid',
+        date: todayStr,
+        notes: '',
+        src: isLoggedIn ? 'Customer Account Pop-up' : 'Website order pop-up',
+      });
+      if (isLoggedIn) {
+        refreshCustomerData();
+      }
+    } catch (err: unknown) {
+      console.warn('Order saved locally/fallback warning:', err);
+    }
+
+    const waNum = formatWhatsAppNumber(content.biz?.whatsapp) || RESTAURANT_INFO.whatsappNumber;
     const encoded = encodeURIComponent(text);
-    const url = `https://wa.me/${RESTAURANT_INFO.whatsappNumber}?text=${encoded}`;
+    const url = `https://wa.me/${waNum}?text=${encoded}`;
+    setIsSubmitting(false);
     window.open(url, '_blank');
     onClose();
   };
@@ -64,10 +134,10 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
             <h3 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '22px' }}>
-              Order with Zion Mbeya
+              {content.pg?.order?.title || 'Order with Zion Mbeya'}
             </h3>
             <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-              Direct ordering on WhatsApp with instant kitchen dispatch.
+              {content.pg?.order?.text || 'Direct ordering on WhatsApp with instant kitchen dispatch.'}
             </p>
           </div>
           <button
@@ -114,6 +184,61 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
           </button>
         </div>
 
+        {isLoggedIn ? (
+          <div
+            style={{
+              background: '#dcfce7',
+              color: '#166534',
+              padding: '8px 12px',
+              borderRadius: '10px',
+              fontSize: '12px',
+              marginBottom: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              border: '1px solid #bbf7d0',
+            }}
+          >
+            <span>✓ Ordering as <strong>{member?.name || user?.user_metadata?.full_name || 'Customer'}</strong></span>
+            <span style={{ fontSize: '11px', opacity: 0.85 }}>Saved to Account</span>
+          </div>
+        ) : (
+          <div
+            style={{
+              background: 'rgba(0,0,0,0.04)',
+              padding: '8px 12px',
+              borderRadius: '10px',
+              fontSize: '12px',
+              marginBottom: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span style={{ color: 'var(--text-muted)' }}>Guest Checkout · No account needed</span>
+            {onOpenAuthModal && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenAuthModal('login');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--orange)',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                Sign In ↗
+              </button>
+            )}
+          </div>
+        )}
+
         <form onSubmit={handleWhatsAppSend}>
           <div className="form-group">
             <label>Your Name</label>
@@ -127,6 +252,17 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
             />
           </div>
 
+          <div className="form-group">
+            <label>Phone / WhatsApp Number</label>
+            <input
+              type="tel"
+              className="form-input"
+              placeholder="e.g., 0768 000 111"
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+            />
+          </div>
+
           {orderType === 'delivery' && (
             <div className="form-group">
               <label>Delivery Area in Mbeya</label>
@@ -135,7 +271,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
                 value={selectedZone}
                 onChange={(e) => setSelectedZone(e.target.value)}
               >
-                {DELIVERY_ZONES.map((zone) => (
+                {zonesList.map((zone) => (
                   <option key={zone.name} value={zone.name}>
                     {zone.name} ({zone.fee})
                   </option>
@@ -175,7 +311,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
             className="btn-solid"
             style={{ width: '100%', padding: '14px', fontSize: '15px' }}
           >
-            Send Order to WhatsApp ↗
+            {content.pg?.order?.btn || 'Send Order to WhatsApp ↗'}
           </button>
         </form>
       </div>

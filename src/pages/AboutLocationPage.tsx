@@ -2,6 +2,7 @@ import React from 'react';
 import { PageId } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
 import { OPERATING_HOURS, RESTAURANT_INFO } from '../data/locationData';
+import { useContent } from '../data/store';
 
 interface AboutLocationPageProps {
   onNavigate: (page: PageId) => void;
@@ -12,6 +13,11 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
   onNavigate,
   onOpenOrderModal,
 }) => {
+  const content = useContent();
+  const banner = content.banners?.about;
+  const about = content.pg?.about;
+  const hoursList = (content.hours && content.hours.length > 0) ? content.hours : OPERATING_HOURS;
+
   return (
     <>
       {/* PAGE HEADER */}
@@ -25,11 +31,11 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
 
           <div className="page-title-section">
             <div className="eyebrow" style={{ color: 'var(--terracotta)' }}>
-              OUR STORY & PHYSICAL LOCATION
+              {banner?.eyebrow || 'OUR STORY & PHYSICAL LOCATION'}
             </div>
-            <h1>About Zion Cakes & Bites</h1>
+            <h1>{banner?.title || 'About Zion Cakes & Bites'}</h1>
             <p>
-              Founded in the heart of Mbeya, dedicated to elevating everyday dining, family celebrations, and artisan baking.
+              {banner?.text || 'Founded in the heart of Mbeya, dedicated to elevating everyday dining, family celebrations, and artisan baking.'}
             </p>
           </div>
         </div>
@@ -41,37 +47,39 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
           <div className="about-story-card">
             <div>
               <div className="eyebrow" style={{ color: 'var(--orange)', marginBottom: '8px' }}>
-                LOCAL ROOTS · FRESH DAILY
+                {about?.eyebrow || 'LOCAL ROOTS · FRESH DAILY'}
               </div>
               <h2>
-                From a local home oven to Mbeya's favorite food hub.
+                {about?.title || "From a local home oven to Mbeya's favorite food hub."}
               </h2>
               <p className="story-lead">
-                Zion Cakes & Bites started with a single promise: never compromise on ingredient freshness. Located at <b>Forest Mpya, Maghorofani</b>, we bake celebration cakes, slice gourmet pizzas, and flame-grill chicken every morning for the vibrant community of Mbeya.
+                {about?.lead || (
+                  <>
+                    Zion Cakes & Bites started with a single promise: never compromise on ingredient freshness. Located at <b>Forest Mpya, Maghorofani</b>, we bake celebration cakes, slice gourmet pizzas, and flame-grill chicken every morning for the vibrant community of Mbeya.
+                  </>
+                )}
               </p>
               <p className="story-body">
-                Whether you stop by for a quick midday shawarma, spend the weekend catching up over iced caramel lattes with free Wi-Fi, or order a 2-tier wedding centerpiece, we prepare everything with care and warmth.
+                {about?.body || "Whether you stop by for a quick midday shawarma, spend the weekend catching up over iced caramel lattes with free Wi-Fi, or order a 2-tier wedding centerpiece, we prepare everything with care and warmth."}
               </p>
 
               <div className="about-metrics-row">
-                <div className="about-metric-pill">
-                  <div className="metric-num">4.1★</div>
-                  <div className="metric-label">87 Google Reviews</div>
-                </div>
-                <div className="about-metric-pill">
-                  <div className="metric-num">6,896+</div>
-                  <div className="metric-label">Instagram Followers</div>
-                </div>
-                <div className="about-metric-pill">
-                  <div className="metric-num">100%</div>
-                  <div className="metric-label">Made Fresh in Mbeya</div>
-                </div>
+                {(about?.metrics || [
+                  { n: '4.1★', l: '87 Google Reviews' },
+                  { n: '6,896+', l: 'Instagram Followers' },
+                  { n: '100%', l: 'Made Fresh in Mbeya' }
+                ]).map((m, i) => (
+                  <div key={i} className="about-metric-pill">
+                    <div className="metric-num">{m.n}</div>
+                    <div className="metric-label">{m.l}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
             <div className="about-img-container">
               <img
-                src="https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?q=80&w=1000&auto=format&fit=crop"
+                src={content.home?.aboutPhoto || "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?q=80&w=1000&auto=format&fit=crop"}
                 alt="Zion cafe interior"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -114,9 +122,9 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
               <div className="eyebrow">PHYSICAL STORE & DINE-IN</div>
               <h2>Your Zion moment starts in Mbeya.</h2>
               <div className="addr">
-                📍 {RESTAURANT_INFO.addressLine1}
+                📍 {content.biz?.address1 || RESTAURANT_INFO.addressLine1}
                 <br />
-                {RESTAURANT_INFO.addressCity}
+                {content.biz?.address2 || RESTAURANT_INFO.addressCity}
               </div>
 
               {/* Operating Hours Table */}
@@ -131,7 +139,7 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
                 <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--terracotta)', marginBottom: '10px' }}>
                   🕒 Operating Hours
                 </div>
-                {OPERATING_HOURS.map((h, idx) => (
+                {hoursList.map((h, idx) => (
                   <div
                     key={idx}
                     style={{
@@ -140,7 +148,7 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
                       fontSize: '12.5px',
                       color: '#cfc6b8',
                       marginBottom: '6px',
-                      borderBottom: idx < OPERATING_HOURS.length - 1 ? '1px dashed rgba(255,255,255,0.08)' : 'none',
+                      borderBottom: idx < hoursList.length - 1 ? '1px dashed rgba(255,255,255,0.08)' : 'none',
                       paddingBottom: '4px',
                     }}
                   >
@@ -152,7 +160,7 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
 
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <a
-                  href={RESTAURANT_INFO.googleMapsUrl}
+                  href={content.biz?.mapUrl || RESTAURANT_INFO.googleMapsUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-solid"
@@ -160,7 +168,7 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
                   Open in Google Maps ↗
                 </a>
                 <a
-                  href={RESTAURANT_INFO.directionsUrl}
+                  href={content.biz?.dirUrl || RESTAURANT_INFO.directionsUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-outline"
@@ -193,12 +201,12 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
                 <div className="location-map-badge">
                   <div className="pin">📍</div>
                   <div>
-                    <b>Zion Cakes & Bites</b>
-                    <span>Forest Mpya, Maghorofani, Mbeya</span>
+                    <b>{content.biz?.name || 'Zion Cakes & Bites'}</b>
+                    <span>{content.biz?.address1 || 'Forest Mpya, Maghorofani'}, {content.biz?.address2?.split(',')[0] || 'Mbeya'}</span>
                   </div>
                 </div>
                 <a
-                  href={RESTAURANT_INFO.googleMapsUrl}
+                  href={content.biz?.mapUrl || RESTAURANT_INFO.googleMapsUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="location-map-link-btn"

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PageId } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
 import { RESTAURANT_INFO, DELIVERY_ZONES, FAQ_ITEMS } from '../data/locationData';
+import { useContent, saveInquiryToStore, formatWhatsAppNumber } from '../data/store';
 
 interface ContactOrderPageProps {
   onNavigate: (page: PageId) => void;
@@ -12,6 +13,8 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
   onNavigate,
   onOpenOrderModal,
 }) => {
+  const content = useContent();
+
   const [inquiryName, setInquiryName] = useState('');
   const [inquiryPhone, setInquiryPhone] = useState('');
   const [inquiryType, setInquiryType] = useState('Daily Food Delivery');
@@ -19,10 +22,45 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
   const [submitted, setSubmitted] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
-  const handleInquirySubmit = (e: React.FormEvent) => {
+  const banner = content.banners?.contact;
+  const contactPg = content.pg?.contact;
+  const zonesList = (content.zones && content.zones.length > 0) ? content.zones : DELIVERY_ZONES;
+  const faqList = (content.faq && content.faq.length > 0)
+    ? content.faq.map((f) => ({ question: f.q, answer: f.a }))
+    : FAQ_ITEMS;
+
+  const inquiryOptions = contactPg?.types && contactPg.types.length > 0
+    ? contactPg.types
+    : [
+        'Daily Food Delivery',
+        'Custom Cake Preorder',
+        'Wedding / Send-off Catering',
+        'Corporate / Bulk Pastry Order',
+        'General Question',
+      ];
+
+  const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = `Hello Zion Cakes & Bites Mbeya!\n\n*Name:* ${inquiryName}\n*Phone:* ${inquiryPhone}\n*Inquiry Category:* ${inquiryType}\n*Details:* ${inquiryMessage}\n\nSent from Zion Mbeya Website`;
-    const url = `https://wa.me/${RESTAURANT_INFO.whatsappNumber}?text=${encodeURIComponent(text)}`;
+
+    // Save inquiry to Supabase store
+    const todayStr = new Date().toISOString().slice(0, 10);
+    try {
+      await saveInquiryToStore({
+        name: inquiryName,
+        phone: inquiryPhone,
+        email: '',
+        type: inquiryType,
+        message: inquiryMessage,
+        date: todayStr,
+        status: 'unread',
+      });
+    } catch (err: unknown) {
+      console.warn('Could not save inquiry to Supabase:', err);
+    }
+
+    const waNum = formatWhatsAppNumber(content.biz?.whatsapp) || RESTAURANT_INFO.whatsappNumber;
+    const url = `https://wa.me/${waNum}?text=${encodeURIComponent(text)}`;
     setSubmitted(true);
     window.open(url, '_blank');
   };
@@ -30,6 +68,24 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
+
+  const contactCards = contactPg?.cards || [
+    {
+      icon: '💬',
+      title: 'WhatsApp Direct Order',
+      text: 'Instant kitchen order dispatch. Send your items or cake inspiration photo.',
+    },
+    {
+      icon: '📞',
+      title: 'Phone Inquiries',
+      text: 'Speak directly with our counter staff for immediate inquiries and table bookings.',
+    },
+    {
+      icon: '📸',
+      title: 'Instagram Community',
+      text: `Join ${content.biz?.followers || RESTAURANT_INFO.instagramFollowers} followers for daily fresh bake reels & cakes.`,
+    },
+  ];
 
   return (
     <>
@@ -44,11 +100,11 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
 
           <div className="page-title-section">
             <div className="eyebrow" style={{ color: 'var(--terracotta)' }}>
-              REACH OUT & CITYWIDE DELIVERY
+              {banner?.eyebrow || 'REACH OUT & CITYWIDE DELIVERY'}
             </div>
-            <h1>Contact & Delivery</h1>
+            <h1>{banner?.title || 'Contact & Delivery'}</h1>
             <p>
-              Order via WhatsApp for rapid dispatch, inquire about event catering, or ask our bakery team about delivery to your area in Mbeya.
+              {banner?.text || 'Order via WhatsApp for rapid dispatch, inquire about event catering, or ask our bakery team about delivery to your area in Mbeya.'}
             </p>
           </div>
         </div>
@@ -74,15 +130,15 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
                 textAlign: 'left',
               }}
             >
-              <div style={{ fontSize: '28px', marginBottom: '10px' }}>💬</div>
+              <div style={{ fontSize: '28px', marginBottom: '10px' }}>{contactCards[0]?.icon || '💬'}</div>
               <h3 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '18px', marginBottom: '6px' }}>
-                WhatsApp Direct Order
+                {contactCards[0]?.title || 'WhatsApp Direct Order'}
               </h3>
               <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                Instant kitchen order dispatch. Send your items or cake inspiration photo.
+                {contactCards[0]?.text || 'Instant kitchen order dispatch. Send your items or cake inspiration photo.'}
               </p>
               <a
-                href={RESTAURANT_INFO.whatsappDirectUrl}
+                href={content.biz?.whatsapp ? `https://wa.me/${formatWhatsAppNumber(content.biz.whatsapp)}` : RESTAURANT_INFO.whatsappDirectUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="btn-solid"
@@ -101,19 +157,19 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
                 textAlign: 'left',
               }}
             >
-              <div style={{ fontSize: '28px', marginBottom: '10px' }}>📞</div>
+              <div style={{ fontSize: '28px', marginBottom: '10px' }}>{contactCards[1]?.icon || '📞'}</div>
               <h3 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '18px', marginBottom: '6px' }}>
-                Phone Inquiries
+                {contactCards[1]?.title || 'Phone Inquiries'}
               </h3>
               <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                Speak directly with our counter staff for immediate inquiries and table bookings.
+                {contactCards[1]?.text || 'Speak directly with our counter staff for immediate inquiries and table bookings.'}
               </p>
               <a
-                href={`tel:${RESTAURANT_INFO.phoneCall}`}
+                href={`tel:${content.biz?.phone ? content.biz.phone.replace(/\s+/g, '') : RESTAURANT_INFO.phoneCall}`}
                 className="btn-outline"
                 style={{ display: 'inline-block', border: '1px solid rgba(36,28,21,0.2)' }}
               >
-                Call +255 768 000 111
+                Call {content.biz?.phone ? content.biz.phone.split('/')[0].trim() : '+255 768 000 111'}
               </a>
             </div>
 
@@ -126,21 +182,21 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
                 textAlign: 'left',
               }}
             >
-              <div style={{ fontSize: '28px', marginBottom: '10px' }}>📸</div>
+              <div style={{ fontSize: '28px', marginBottom: '10px' }}>{contactCards[2]?.icon || '📸'}</div>
               <h3 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '18px', marginBottom: '6px' }}>
-                Instagram Community
+                {contactCards[2]?.title || 'Instagram Community'}
               </h3>
               <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                Join {RESTAURANT_INFO.instagramFollowers} followers for daily fresh bake reels & cakes.
+                {contactCards[2]?.text || `Join ${content.biz?.followers || RESTAURANT_INFO.instagramFollowers} followers for daily fresh bake reels & cakes.`}
               </p>
               <a
-                href={RESTAURANT_INFO.instagramUrl}
+                href={content.biz?.igUrl || RESTAURANT_INFO.instagramUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="btn-outline"
                 style={{ display: 'inline-block', border: '1px solid rgba(36,28,21,0.2)' }}
               >
-                Follow @zioncakesmbeya ↗
+                Follow {content.biz?.instagram || '@zioncakesmbeya'} ↗
               </a>
             </div>
           </div>
@@ -156,14 +212,14 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
                 COVERAGE MAP
               </div>
               <h2 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '26px', marginBottom: '12px' }}>
-                Mbeya Delivery Zones & Rates
+                {contactPg?.zonesTitle || 'Mbeya Delivery Zones & Rates'}
               </h2>
               <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginBottom: '20px' }}>
-                We deliver throughout Mbeya using insulated thermal bags so food arrives hot and cakes arrive pristine.
+                {contactPg?.zonesText || 'We deliver throughout Mbeya using insulated thermal bags so food arrives hot and cakes arrive pristine.'}
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {DELIVERY_ZONES.map((zone, idx) => (
+                {zonesList.map((zone, idx) => (
                   <div
                     key={idx}
                     className="delivery-zone-row"
@@ -193,10 +249,10 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
               id="catering-inquiry-form-card"
             >
               <h3 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '22px', marginBottom: '6px' }}>
-                Send a Message or Catering Request
+                {contactPg?.formTitle || 'Send a Message or Catering Request'}
               </h3>
               <p style={{ fontSize: '12.5px', color: '#cfc6b8', marginBottom: '20px' }}>
-                Planning a wedding send-off, office event, or have a specific question? Send your inquiry directly.
+                {contactPg?.formText || 'Planning a wedding send-off, office event, or have a specific question? Send your inquiry directly.'}
               </p>
 
               {submitted && (
@@ -246,11 +302,11 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
                     value={inquiryType}
                     onChange={(e) => setInquiryType(e.target.value)}
                   >
-                    <option value="Daily Food Delivery">Daily Food Delivery</option>
-                    <option value="Custom Cake Preorder">Custom Celebration Cake</option>
-                    <option value="Wedding / Send-off Catering">Wedding / Send-off Catering</option>
-                    <option value="Corporate / Bulk Pastry Order">Corporate / Bulk Pastry Order</option>
-                    <option value="General Question">General Feedback / Question</option>
+                    {inquiryOptions.map((opt, i) => (
+                      <option key={i} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -282,9 +338,9 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
       {/* FAQ ACCORDION */}
       <section className="faq" style={{ paddingTop: '20px' }}>
         <div className="wrap">
-          <h2>Delivery & Ordering FAQ</h2>
+          <h2>Delivery &amp; Ordering FAQ</h2>
           <div className="faq-list">
-            {FAQ_ITEMS.map((item, idx) => (
+            {faqList.map((item, idx) => (
               <div
                 key={idx}
                 className="faq-item"

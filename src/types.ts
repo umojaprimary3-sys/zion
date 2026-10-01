@@ -1,4 +1,15 @@
-export type PageId = 'home' | 'menu' | 'custom-cakes' | 'about' | 'contact' | 'reviews';
+export type PageId = 
+  | 'home' 
+  | 'menu' 
+  | 'custom-cakes' 
+  | 'about' 
+  | 'contact' 
+  | 'reviews'
+  | 'account'
+  | 'login'
+  | 'register'
+  | 'forgot-password'
+  | 'reset-password';
 
 export type MenuCategory = 
   | 'all'

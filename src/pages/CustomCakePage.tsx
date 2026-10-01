@@ -8,6 +8,8 @@ import {
   CAKE_DECORATIONS,
 } from '../data/cakeData';
 import { RESTAURANT_INFO, DELIVERY_ZONES } from '../data/locationData';
+import { useContent, saveOrderToStore, generateOrderId, formatWhatsAppNumber, formatMoney } from '../data/store';
+import { useCustomerAuth } from '../context/CustomerAuthContext';
 
 interface CustomCakePageProps {
   onNavigate: (page: PageId) => void;
@@ -18,24 +20,88 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
   onNavigate,
   onOpenOrderModal,
 }) => {
-  const [selectedFlavor, setSelectedFlavor] = useState(CAKE_FLAVORS[0]);
-  const [selectedSize, setSelectedSize] = useState(CAKE_SIZES[0]);
-  const [selectedOccasion, setSelectedOccasion] = useState(CAKE_OCCASIONS[0]);
-  const [selectedDecoration, setSelectedDecoration] = useState(CAKE_DECORATIONS[0]);
+  const content = useContent();
+  const { user, member, isLoggedIn, refreshCustomerData } = useCustomerAuth();
+
+  const flavorsList = (content.flavors && content.flavors.length > 0)
+    ? content.flavors.map((f, i) => ({
+        id: `flavor-${i}`,
+        name: f.name,
+        description: f.description,
+        accentColor: f.color,
+        badge: f.badge,
+      }))
+    : CAKE_FLAVORS;
+
+  const sizesList = (content.sizes && content.sizes.length > 0)
+    ? content.sizes.map((s, i) => ({
+        id: `size-${i}`,
+        name: s.name,
+        weight: s.weight,
+        servings: s.servings,
+        basePrice: s.price,
+        basePriceDisplay: formatMoney(s.price),
+        description: s.description,
+      }))
+    : CAKE_SIZES;
+
+  const occList = (content.occ && content.occ.length > 0)
+    ? content.occ.map((o, i) => ({
+        id: `occ-${i}`,
+        label: o.label,
+        icon: o.icon,
+      }))
+    : CAKE_OCCASIONS;
+
+  const decosList = (content.decos && content.decos.length > 0)
+    ? content.decos.map((d, i) => ({
+        id: `deco-${i}`,
+        label: d.label,
+        extra: d.extra,
+        extraDisplay: d.extra === 0 ? 'Included (Free)' : `+${formatMoney(d.extra)}`,
+      }))
+    : CAKE_DECORATIONS;
+
+  const zonesList = (content.zones && content.zones.length > 0)
+    ? content.zones
+    : DELIVERY_ZONES;
+
+  const [selectedFlavor, setSelectedFlavor] = useState(flavorsList[0]);
+  const [selectedSize, setSelectedSize] = useState(sizesList[0]);
+  const [selectedOccasion, setSelectedOccasion] = useState(occList[0]);
+  const [selectedDecoration, setSelectedDecoration] = useState(decosList[0]);
   const [cakeMessage, setCakeMessage] = useState('');
   const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery'>('pickup');
-  const [deliveryZone, setDeliveryZone] = useState(DELIVERY_ZONES[0].name);
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
+  const [deliveryZone, setDeliveryZone] = useState(zonesList[0]?.name || 'Njia Panda & Hospitali Zone');
+  const [customerName, setCustomerName] = useState(member?.name || user?.user_metadata?.full_name || '');
+  const [customerPhone, setCustomerPhone] = useState(member?.phone || user?.user_metadata?.phone || '');
   const [dateNeeded, setDateNeeded] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderError, setOrderError] = useState('');
 
-  const totalPrice = selectedSize.basePrice + selectedDecoration.extra;
-  const totalPriceDisplay = `TZS ${totalPrice.toLocaleString()}`;
+  // Auto-sync customer info if auth loads after mount
+  React.useEffect(() => {
+    if (isLoggedIn) {
+      if (!customerName && (member?.name || user?.user_metadata?.full_name)) {
+        setCustomerName(member?.name || user?.user_metadata?.full_name || '');
+      }
+      if (!customerPhone && (member?.phone || user?.user_metadata?.phone)) {
+        setCustomerPhone(member?.phone || user?.user_metadata?.phone || '');
+      }
+    }
+  }, [isLoggedIn, member, user]);
 
-  const handleOrderSubmit = (e: React.FormEvent) => {
+  const totalPrice = (selectedSize?.basePrice || 45000) + (selectedDecoration?.extra || 0);
+  const totalPriceDisplay = formatMoney(totalPrice);
+
+  const banner = content.banners?.cake;
+
+  const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setOrderError('');
     
     // Format WhatsApp prefilled message
     let msg = `🎂 *ZION CUSTOM CAKE PREORDER* 🎂\n\n`;
@@ -56,9 +122,47 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
     msg += `\n*Estimated Total:* ${totalPriceDisplay}\n\n`;
     msg += `Sent from Zion Cakes & Bites App · Mbeya`;
 
+    // Save order record to Supabase store
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const orderId = generateOrderId(content.cfg?.prefix || 'ZN', content.orders || []);
+    let itemsDetail = `Custom cake · ${selectedFlavor.name} · ${selectedSize.weight} · ${selectedOccasion.label}`;
+    if (cakeMessage.trim()) {
+      itemsDetail += `\nMessage: "${cakeMessage.trim()}"`;
+    }
+    if (selectedDecoration.label) {
+      itemsDetail += `\nDecoration: ${selectedDecoration.label}`;
+    }
+
+    try {
+      await saveOrderToStore({
+        id: orderId,
+        user_id: user?.id,
+        member_id: member?.id,
+        type: 'cake',
+        status: 'new',
+        name: customerName || member?.name || 'Valued Customer',
+        phone: customerPhone,
+        email: user?.email || '',
+        zone: deliveryType === 'delivery' ? deliveryZone : '—',
+        items: itemsDetail,
+        total: totalPrice,
+        pay: 'unpaid',
+        date: dateNeeded || todayStr,
+        notes: specialInstructions,
+        src: isLoggedIn ? 'Custom Cake Studio (Customer Account)' : 'Custom Cake Studio',
+      });
+      if (isLoggedIn) {
+        refreshCustomerData();
+      }
+    } catch (err: unknown) {
+      console.warn('Could not persist order to Supabase:', err);
+    }
+
+    const waNum = formatWhatsAppNumber(content.biz?.whatsapp) || RESTAURANT_INFO.whatsappNumber;
     const encoded = encodeURIComponent(msg);
-    const url = `https://wa.me/${RESTAURANT_INFO.whatsappNumber}?text=${encoded}`;
+    const url = `https://wa.me/${waNum}?text=${encoded}`;
     
+    setIsSubmitting(false);
     setOrderSuccess(true);
     window.open(url, '_blank');
   };
@@ -76,11 +180,11 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
 
           <div className="page-title-section">
             <div className="eyebrow" style={{ color: 'var(--terracotta)' }}>
-              HANDMADE CELEBRATION CAKES · MBEYA
+              {banner?.eyebrow || 'HANDMADE CELEBRATION CAKES · MBEYA'}
             </div>
-            <h1>Custom Cake Studio</h1>
+            <h1>{banner?.title || 'Custom Cake Studio'}</h1>
             <p>
-              Design your dream celebration cake in 5 simple steps. Select from 12 gourmet flavors, 4 party sizes, bespoke toppings, and custom inscriptions.
+              {banner?.text || 'Design your dream celebration cake in 5 simple steps. Select from 12 gourmet flavors, 4 party sizes, bespoke toppings, and custom inscriptions.'}
             </p>
           </div>
         </div>
@@ -121,22 +225,22 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                 Signature Celebration Cake
               </h2>
               <div style={{ color: 'var(--terracotta)', fontSize: '13px', marginBottom: '12px' }}>
-                📍 Forest Mpya, Maghorofani, Mbeya · Baked Fresh Daily
+                📍 {content.biz?.address1 || 'Forest Mpya, Maghorofani'}, {content.biz?.address2 || 'Mbeya'} · Baked Fresh Daily
               </div>
               <p style={{ color: '#cfc6b8', fontSize: '13.5px', lineHeight: '1.5', marginBottom: '16px' }}>
                 Every cake is baked from scratch with pure dairy butter, farm-fresh eggs, and premium chocolate. No artificial preservatives.
               </p>
               <div className="signature-meta" style={{ margin: 0, color: '#e9e3d8' }}>
                 <div>
-                  <b>Fresh daily</b>
+                  <b>{content.home?.sig?.m0 || 'Fresh daily'}</b>
                   <span>Small batches</span>
                 </div>
                 <div>
-                  <b>4 sizes</b>
+                  <b>{content.home?.sig?.m1 || '4 sizes'}</b>
                   <span>1kg to 2-Tier</span>
                 </div>
                 <div>
-                  <b>12 flavors</b>
+                  <b>{content.home?.sig?.m2 || '12 flavors'}</b>
                   <span>Custom recipes</span>
                 </div>
               </div>
@@ -153,7 +257,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
               }}
             >
               <img
-                src="https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?q=80&w=800&auto=format&fit=crop"
+                src={content.home?.hero?.image || "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?q=80&w=800&auto=format&fit=crop"}
                 alt="Signature cake"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -205,13 +309,13 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
               <div className="step-card">
                 <div className="step-header">
                   <div className="step-number">1</div>
-                  <h3>Choose Your Cake Flavor ({CAKE_FLAVORS.length} Available)</h3>
+                  <h3>Choose Your Cake Flavor ({flavorsList.length} Available)</h3>
                 </div>
                 <div className="flavors-grid">
-                  {CAKE_FLAVORS.map((flavor) => (
+                  {flavorsList.map((flavor) => (
                     <div
                       key={flavor.id}
-                      className={`flavor-item ${selectedFlavor.id === flavor.id ? 'selected' : ''}`}
+                      className={`flavor-item ${selectedFlavor?.id === flavor.id ? 'selected' : ''}`}
                       onClick={() => setSelectedFlavor(flavor)}
                     >
                       {flavor.badge && (
@@ -237,10 +341,10 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                   <h3>Select Cake Size & Weight</h3>
                 </div>
                 <div className="sizes-grid">
-                  {CAKE_SIZES.map((size) => (
+                  {sizesList.map((size) => (
                     <div
                       key={size.id}
-                      className={`size-item ${selectedSize.id === size.id ? 'selected' : ''}`}
+                      className={`size-item ${selectedSize?.id === size.id ? 'selected' : ''}`}
                       onClick={() => setSelectedSize(size)}
                     >
                       <div className="size-top">
@@ -267,11 +371,11 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                   What are you celebrating?
                 </label>
                 <div className="occasions-wrap" style={{ marginBottom: '20px' }}>
-                  {CAKE_OCCASIONS.map((occ) => (
+                  {occList.map((occ) => (
                     <button
                       key={occ.id}
                       type="button"
-                      className={`occasion-chip ${selectedOccasion.id === occ.id ? 'selected' : ''}`}
+                      className={`occasion-chip ${selectedOccasion?.id === occ.id ? 'selected' : ''}`}
                       onClick={() => setSelectedOccasion(occ)}
                     >
                       <span>{occ.icon}</span>
@@ -284,10 +388,10 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                   Topping & Finishing Style
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  {CAKE_DECORATIONS.map((dec) => (
+                  {decosList.map((dec) => (
                     <div
                       key={dec.id}
-                      className={`size-item ${selectedDecoration.id === dec.id ? 'selected' : ''}`}
+                      className={`size-item ${selectedDecoration?.id === dec.id ? 'selected' : ''}`}
                       onClick={() => setSelectedDecoration(dec)}
                       style={{ padding: '12px' }}
                     >
@@ -384,7 +488,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                       value={deliveryType}
                       onChange={(e) => setDeliveryType(e.target.value as 'pickup' | 'delivery')}
                     >
-                      <option value="pickup">Store Pickup (Forest Mpya, Maghorofani)</option>
+                      <option value="pickup">Store Pickup ({content.biz?.address1 || 'Forest Mpya, Maghorofani'})</option>
                       <option value="delivery">City Delivery to my location</option>
                     </select>
                   </div>
@@ -398,7 +502,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                       value={deliveryZone}
                       onChange={(e) => setDeliveryZone(e.target.value)}
                     >
-                      {DELIVERY_ZONES.map((zone) => (
+                      {zonesList.map((zone) => (
                         <option key={zone.name} value={zone.name}>
                           {zone.name} ({zone.fee})
                         </option>
@@ -416,27 +520,27 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
 
                 <div className="summary-row">
                   <span>Flavor:</span>
-                  <b>{selectedFlavor.name}</b>
+                  <b>{selectedFlavor?.name}</b>
                 </div>
 
                 <div className="summary-row">
                   <span>Size & Slices:</span>
-                  <b>{selectedSize.name} ({selectedSize.weight})</b>
+                  <b>{selectedSize?.name} ({selectedSize?.weight})</b>
                 </div>
 
                 <div className="summary-row">
                   <span>Servings:</span>
-                  <b>{selectedSize.servings}</b>
+                  <b>{selectedSize?.servings}</b>
                 </div>
 
                 <div className="summary-row">
                   <span>Occasion:</span>
-                  <b>{selectedOccasion.label}</b>
+                  <b>{selectedOccasion?.label}</b>
                 </div>
 
                 <div className="summary-row">
                   <span>Finish:</span>
-                  <b>{selectedDecoration.label}</b>
+                  <b>{selectedDecoration?.label}</b>
                 </div>
 
                 {cakeMessage && (
@@ -482,7 +586,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                     color: '#cfc6b8',
                   }}
                 >
-                  📞 Prefer calling? <b>+255 768 000 111</b>
+                  📞 Prefer calling? <b>{content.biz?.phone || '+255 768 000 111'}</b>
                 </div>
               </div>
             </div>

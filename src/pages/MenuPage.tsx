@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { PageId, MenuCategory } from '../types';
+import { PageId } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
 import { MENU_ITEMS, MENU_CATEGORIES } from '../data/menuData';
+import { useContent, formatMoney } from '../data/store';
 
 interface MenuPageProps {
   onNavigate: (page: PageId) => void;
@@ -12,11 +13,31 @@ export const MenuPage: React.FC<MenuPageProps> = ({
   onNavigate,
   onOpenOrderModal,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<MenuCategory>('all');
+  const content = useContent();
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const banner = content.banners?.menu;
+
+  const categories = useMemo(() => {
+    if (content.cats && content.cats.length > 0) {
+      return [{ id: 'all', label: 'All Items', icon: '🍽️' }, ...content.cats];
+    }
+    return MENU_CATEGORIES;
+  }, [content.cats]);
+
+  const items = useMemo(() => {
+    if (content.menu && content.menu.length > 0) {
+      return content.menu.map((m) => ({
+        ...m,
+        priceDisplay: formatMoney(m.price),
+      }));
+    }
+    return MENU_ITEMS;
+  }, [content.menu]);
+
   const filteredItems = useMemo(() => {
-    return MENU_ITEMS.filter((item) => {
+    return items.filter((item) => {
       const matchesCategory =
         selectedCategory === 'all' || item.category === selectedCategory;
       const matchesSearch =
@@ -24,7 +45,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
         item.description.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [items, selectedCategory, searchQuery]);
 
   return (
     <>
@@ -39,11 +60,11 @@ export const MenuPage: React.FC<MenuPageProps> = ({
 
           <div className="page-title-section">
             <div className="eyebrow" style={{ color: 'var(--terracotta)' }}>
-              FRESHLY BAKED & COOKED IN MBEYA
+              {banner?.eyebrow || 'FRESHLY BAKED & COOKED IN MBEYA'}
             </div>
-            <h1>Our Full Menu</h1>
+            <h1>{banner?.title || 'Our Full Menu'}</h1>
             <p>
-              Handcrafted celebration cakes, oven-baked pizza, sizzling shawarma, hearty chicken, fresh cookies, and cold-pressed juices.
+              {banner?.text || 'Handcrafted celebration cakes, oven-baked pizza, sizzling shawarma, hearty chicken, fresh cookies, and cold-pressed juices.'}
             </p>
           </div>
         </div>
@@ -84,12 +105,12 @@ export const MenuPage: React.FC<MenuPageProps> = ({
 
           {/* Category Tabs */}
           <div className="category-filter-bar" id="menu-category-tabs">
-            {MENU_CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat.id}
                 type="button"
                 className={`category-tab-btn ${selectedCategory === cat.id ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat.id as MenuCategory)}
+                onClick={() => setSelectedCategory(cat.id)}
               >
                 <span>{cat.icon}</span>
                 <span>{cat.label}</span>
