@@ -40,6 +40,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
   const handleResetForm = () => {
     setErrorMessage('');
     setSuccessMessage('');
+    setLoading(false);
   };
 
   const handleSwitchMode = (newMode: 'login' | 'register' | 'forgot-password') => {
@@ -114,7 +115,12 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
         setLoading(false);
       } else if (mode === 'reset-password') {
         if (password !== confirmPassword) {
-          setErrorMessage('Passwords do not match.');
+          setErrorMessage('Passwords do not match. Please re-enter.');
+          setLoading(false);
+          return;
+        }
+        if (password.length < 6) {
+          setErrorMessage('Password must be at least 6 characters.');
           setLoading(false);
           return;
         }

@@ -30,6 +30,13 @@ export const CustomerAuthPages: React.FC<CustomerAuthPageProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Reset form feedback and loading on mode switch
+  React.useEffect(() => {
+    setErrorMessage('');
+    setSuccessMessage('');
+    setLoading(false);
+  }, [mode]);
+
   // If already logged in and on login/register page, redirect to account
   React.useEffect(() => {
     if (isLoggedIn && (mode === 'login' || mode === 'register')) {
@@ -51,7 +58,7 @@ export const CustomerAuthPages: React.FC<CustomerAuthPageProps> = ({
           setLoading(false);
           return;
         }
-        setSuccessMessage('Welcome back! Redirecting to your account...');
+        setSuccessMessage('Welcome back! Logging you in...');
         setTimeout(() => {
           setLoading(false);
           onNavigate('account');
@@ -95,11 +102,16 @@ export const CustomerAuthPages: React.FC<CustomerAuthPageProps> = ({
           setLoading(false);
           return;
         }
-        setSuccessMessage('A password recovery email has been dispatched. Please check your inbox.');
+        setSuccessMessage('Password reset link sent to your email. Please check your inbox.');
         setLoading(false);
       } else if (mode === 'reset-password') {
         if (password !== confirmPassword) {
-          setErrorMessage('Passwords do not match.');
+          setErrorMessage('Passwords do not match. Please re-enter.');
+          setLoading(false);
+          return;
+        }
+        if (password.length < 6) {
+          setErrorMessage('Password must be at least 6 characters.');
           setLoading(false);
           return;
         }
@@ -109,7 +121,7 @@ export const CustomerAuthPages: React.FC<CustomerAuthPageProps> = ({
           setLoading(false);
           return;
         }
-        setSuccessMessage('Your password has been reset successfully! Redirecting to login...');
+        setSuccessMessage('Your password has been reset successfully! You can now log in.');
         setTimeout(() => {
           setLoading(false);
           onNavigate('login');

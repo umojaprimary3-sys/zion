@@ -71,12 +71,23 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     try {
-      // 1. Try finding member by user_id
-      const { data: byUserId, error: errUserId } = await supabase
+      // 1. Look up the member by user_id first. If not found, wait 700ms and try once more (the database trigger may still be creating it).
+      let { data: byUserId, error: errUserId } = await supabase
         .from('members')
         .select('*')
         .eq('user_id', authUser.id)
         .maybeSingle();
+
+      if (!byUserId && !errUserId) {
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        const retryRes = await supabase
+          .from('members')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .maybeSingle();
+        byUserId = retryRes.data;
+        errUserId = retryRes.error;
+      }
 
       if (byUserId && !errUserId) {
         return {
@@ -95,15 +106,19 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
 
       // 2. If not found by user_id, try finding member by email to link existing customer
+      // Use .eq('email', authUser.email.trim().toLowerCase()) with .limit(1) instead of .ilike and .maybeSingle
       if (authUser.email) {
-        const { data: byEmail } = await supabase
+        const cleanEmail = authUser.email.trim().toLowerCase();
+        const { data: emailRows, error: errEmail } = await supabase
           .from('members')
           .select('*')
-          .ilike('email', authUser.email.trim())
-          .maybeSingle();
+          .eq('email', cleanEmail)
+          .limit(1);
 
-        if (byEmail) {
-          // Link this member to auth user_id
+        const byEmail = emailRows && emailRows.length > 0 ? emailRows[0] : null;
+
+        if (byEmail && !errEmail) {
+          // Link this member to auth user_id if not linked
           await supabase
             .from('members')
             .update({ user_id: authUser.id })
@@ -116,7 +131,7 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
             phone: byEmail.phone || authUser.user_metadata?.phone || '',
             email: byEmail.email || authUser.email,
             area: byEmail.area || authUser.user_metadata?.area || '',
-            joined: byEmail.joined || '',
+            joined: byEmail.joined || (byEmail.created_at ? String(byEmail.created_at).slice(0, 10) : ''),
             birthday: byEmail.birthday || '',
             consent: byEmail.consent !== false,
             status: byEmail.status || 'active',
@@ -125,10 +140,10 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
       }
 
-      // 3. If no member record exists at all, create one for this registered customer
-      const newMemberId = `u_${authUser.id.slice(0, 8)}_${Date.now().toString(36)}`;
-      const newRecord = {
-        id: newMemberId,
+      // 3. Remove the frontend insert into "members" (the database trigger does this now).
+      // If no row exists after retrying, return a local fallback member object but do not insert.
+      const fallbackMember: MemberRecord = {
+        id: `u_${authUser.id.slice(0, 8)}`,
         user_id: authUser.id,
         name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Valued Customer',
         phone: authUser.user_metadata?.phone || '',
@@ -141,29 +156,7 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         notes: 'Registered customer account',
       };
 
-      const { data: inserted, error: insertErr } = await supabase
-        .from('members')
-        .insert(newRecord)
-        .select()
-        .single();
-
-      if (!insertErr && inserted) {
-        return {
-          id: String(inserted.id),
-          user_id: authUser.id,
-          name: inserted.name,
-          phone: inserted.phone,
-          email: inserted.email,
-          area: inserted.area,
-          joined: inserted.joined,
-          birthday: inserted.birthday,
-          consent: inserted.consent !== false,
-          status: inserted.status || 'active',
-          notes: inserted.notes || '',
-        };
-      } else {
-        return newRecord as MemberRecord;
-      }
+      return fallbackMember;
     } catch (e) {
       console.warn('fetchOrSyncMember exception:', e);
       return null;
@@ -268,17 +261,26 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
 
       if (session?.user) {
         setUser(session.user);
-        const mem = await fetchOrSyncMember(session.user);
-        if (isMounted) {
-          setMember(mem);
-          await fetchCustomerOrders(session.user, mem);
-          setLoading(false);
-        }
+        setTimeout(() => {
+          if (!isMounted) return;
+          fetchOrSyncMember(session.user)
+            .then((mem) => {
+              if (!isMounted) return;
+              setMember(mem);
+              return fetchCustomerOrders(session.user, mem);
+            })
+            .catch((err) => {
+              console.warn('onAuthStateChange sync error:', err);
+            })
+            .finally(() => {
+              if (isMounted) setLoading(false);
+            });
+        }, 0);
       } else {
         setUser(null);
         setMember(null);
@@ -340,6 +342,13 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     area?: string;
     birthday?: string;
   }) => {
+    if (!isSupabaseConfigured()) {
+      return {
+        success: false,
+        error: 'The website is not connected to the database yet. Please contact Zion Cakes.',
+      };
+    }
+
     try {
       const cleanEmail = email.trim().toLowerCase();
       const cleanName = fullName.trim();
@@ -376,11 +385,25 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return { success: false, error: error.message };
       }
 
-      if (data?.user) {
+      if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return {
+          success: false,
+          error: 'This email is already registered. Please sign in instead.',
+        };
+      }
+
+      if (!data?.session) {
+        return {
+          success: false,
+          error: 'Account created, but you are not signed in yet. Please check your email to confirm, then sign in.',
+        };
+      }
+
+      if (data.user) {
         setUser(data.user);
         const mem = await fetchOrSyncMember(data.user);
         setMember(mem);
-        return { success: true };
+        await fetchCustomerOrders(data.user, mem);
       }
 
       return { success: true };
@@ -400,6 +423,13 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     email: string;
     password: string;
   }) => {
+    if (!isSupabaseConfigured()) {
+      return {
+        success: false,
+        error: 'The website is not connected to the database yet. Please contact Zion Cakes.',
+      };
+    }
+
     try {
       const cleanEmail = email.trim().toLowerCase();
       if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -415,8 +445,20 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       });
 
       if (error) {
+        if (
+          error.message.includes('Email not confirmed') ||
+          error.message.toLowerCase().includes('email not confirmed')
+        ) {
+          return {
+            success: false,
+            error: 'Please confirm your email first. Check your inbox.',
+          };
+        }
         if (error.message.includes('Invalid login credentials')) {
-          return { success: false, error: 'Invalid email or password. Please check your credentials.' };
+          return {
+            success: false,
+            error: 'Invalid email or password. Please check your credentials.',
+          };
         }
         return { success: false, error: error.message };
       }
