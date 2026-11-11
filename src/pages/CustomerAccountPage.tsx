@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { PageId } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
-import { OrderRecord, formatMoney, formatWhatsAppNumber } from '../data/store';
-import { RESTAURANT_INFO } from '../data/locationData';
+import { OrderRecord, formatMoney, useContent } from '../data/store';
+import { waLink, bt } from '../lib/biz';
 
 interface CustomerAccountPageProps {
   onNavigate: (page: PageId) => void;
@@ -52,6 +52,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({
   onOpenOrderModal,
   onOpenAuthModal,
 }) => {
+  const content = useContent();
   const {
     user,
     member,
@@ -219,9 +220,9 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({
                 }}
               >
                 <div style={{ fontSize: '32px', marginBottom: '10px' }}>⭐</div>
-                <h3 style={{ fontSize: '18px', marginBottom: '6px' }}>Zion Loyalty Club</h3>
+                <h3 style={{ fontSize: '18px', marginBottom: '6px' }}>{bt(content.biz, 'Zion Loyalty Club')}</h3>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  Earn member tiers, birthday surprises, and special custom cake perks with every order in Mbeya.
+                  {bt(content.biz, 'Earn member tiers, birthday surprises, and special custom cake perks with every order in Mbeya.')}
                 </p>
               </div>
 
@@ -601,7 +602,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({
                               {order.type === 'delivery' ? (
                                 <span>🛵 Delivery to: <strong>{order.zone}</strong></span>
                               ) : (
-                                <span>🛍️ Direct Counter Pickup at Zion Store, Forest Mpya</span>
+                                <span>{bt(content.biz, '🛍️ Direct Counter Pickup at Zion Store, Forest Mpya')}</span>
                               )}
                             </div>
                             {order.notes && (
@@ -776,7 +777,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({
                       onChange={(e) => setEditBirthday(e.target.value)}
                     />
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '3px' }}>
-                      We send special birthday discounts to Zion members!
+                      {bt(content.biz, 'We send special birthday discounts to Zion members!')}
                     </span>
                   </div>
 
@@ -804,7 +805,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({
                   Security & Password
                 </h3>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
-                  Update your account password anytime to keep your Zion customer account protected.
+                  {bt(content.biz, 'Update your account password anytime to keep your Zion customer account protected.')}
                 </p>
 
                 {passwordToast && (
@@ -874,7 +875,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({
                     Need help with an order or have questions about delivery?
                   </div>
                   <a
-                    href={`https://wa.me/${formatWhatsAppNumber(RESTAURANT_INFO.whatsappNumber)}?text=${encodeURIComponent('Hello Zion Bakery, I have a question about my customer account.')}`}
+                    href={waLink(content.biz, 'Hello, I have a question about my customer account.') || '#'}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -886,7 +887,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({
                       fontWeight: 600,
                     }}
                   >
-                    <span>💬 Contact Zion Support on WhatsApp</span>
+                    <span>{bt(content.biz, '💬 Contact Zion Support on WhatsApp')}</span>
                     <span>↗</span>
                   </a>
                 </div>
@@ -927,7 +928,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
                 <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--orange)' }}>
-                  Zion Order Tracking
+                  {bt(content.biz, 'Zion Order Tracking')}
                 </span>
                 <h2 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '24px', marginTop: '2px' }}>
                   Order #{selectedOrder.id}
@@ -937,7 +938,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({
                 </div>
               </div>
 
-              <button
+              <button aria-label="Close"
                 type="button"
                 onClick={() => setSelectedOrder(null)}
                 style={{
@@ -1081,7 +1082,7 @@ export const CustomerAccountPage: React.FC<CustomerAccountPageProps> = ({
             {/* ACTION BUTTONS */}
             <div style={{ display: 'flex', gap: '10px' }}>
               <a
-                href={`https://wa.me/${formatWhatsAppNumber(RESTAURANT_INFO.whatsappNumber)}?text=${encodeURIComponent(`Hello Zion Cakes & Bites Mbeya! Inquiring about Order #${selectedOrder.id} (${selectedOrder.name}).`)}`}
+                href={waLink(content.biz, `Hello! Inquiring about Order #${selectedOrder.id} (${selectedOrder.name}).`) || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-solid"

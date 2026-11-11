@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { bt } from '../lib/biz';
 import { PageId } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
 import { MENU_ITEMS, MENU_CATEGORIES } from '../data/menuData';
@@ -84,7 +85,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
-              <button
+              <button aria-label="Close"
                 type="button"
                 onClick={() => setSearchQuery('')}
                 style={{
@@ -220,7 +221,7 @@ export const MenuPage: React.FC<MenuPageProps> = ({
             <div>
               <h3>Craving something special today?</h3>
               <p style={{ fontSize: '13px', color: '#3d362c', marginTop: '4px' }}>
-                Chat directly with our kitchen in Mbeya for immediate takeaway or city delivery.
+                {bt(content.biz, 'Chat directly with our kitchen in Mbeya for immediate takeaway or city delivery.')}
               </p>
             </div>
             <div className="cta-actions">

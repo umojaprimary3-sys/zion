@@ -9,11 +9,22 @@ export interface EmailPayload {
   }>;
 }
 
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+
 export async function sendEmail(payload: EmailPayload, customApiUrl?: string): Promise<string> {
   const apiUrl = (customApiUrl || import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
   if (!apiUrl) {
-    return 'queued (demo, no API connected)';
+    // No custom API: use the Supabase Edge Function "send-email" (see supabase/functions/send-email).
+    if (!isSupabaseConfigured()) return 'not sent (connect Supabase or set an Email API URL)';
+    try {
+      const { data, error } = await supabase.functions.invoke('send-email', { body: payload });
+      if (error) return `failed (${error.message})`;
+      return data?.sent ? `sent (${data.sent}/${payload.messages.length})` : `failed (${data?.error || 'no emails sent'})`;
+    } catch (err) {
+      console.error('sendEmail failed:', err);
+      return 'failed (could not reach the send-email function)';
+    }
   }
 
   try {

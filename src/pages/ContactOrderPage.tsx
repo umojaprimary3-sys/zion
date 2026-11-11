@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { PageId } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
-import { RESTAURANT_INFO, DELIVERY_ZONES, FAQ_ITEMS } from '../data/locationData';
+import { DELIVERY_ZONES, FAQ_ITEMS } from '../data/locationData';
+import { waLink, telHref, firstPhone, bt } from '../lib/biz';
 import { useContent, saveInquiryToStore, formatWhatsAppNumber } from '../data/store';
 
 interface ContactOrderPageProps {
@@ -41,7 +42,7 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
 
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const text = `Hello Zion Cakes & Bites Mbeya!\n\n*Name:* ${inquiryName}\n*Phone:* ${inquiryPhone}\n*Inquiry Category:* ${inquiryType}\n*Details:* ${inquiryMessage}\n\nSent from Zion Mbeya Website`;
+    const text = `${content.biz?.orderGreeting || 'Hello!'}\n\n*Name:* ${inquiryName}\n*Phone:* ${inquiryPhone}\n*Inquiry Category:* ${inquiryType}\n*Details:* ${inquiryMessage}\n\nSent from ${content.biz?.name || 'the website'}`;
 
     // Save inquiry to Supabase store
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -59,10 +60,9 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
       console.warn('Could not save inquiry to Supabase:', err);
     }
 
-    const waNum = formatWhatsAppNumber(content.biz?.whatsapp) || RESTAURANT_INFO.whatsappNumber;
-    const url = `https://wa.me/${waNum}?text=${encodeURIComponent(text)}`;
+    const url = waLink(content.biz, text);
     setSubmitted(true);
-    window.open(url, '_blank');
+    if (url) window.open(url, '_blank');
   };
 
   const toggleFaq = (index: number) => {
@@ -83,7 +83,7 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
     {
       icon: '📸',
       title: 'Instagram Community',
-      text: `Join ${content.biz?.followers || RESTAURANT_INFO.instagramFollowers} followers for daily fresh bake reels & cakes.`,
+      text: `Follow us for daily fresh bake reels & cakes.`,
     },
   ];
 
@@ -104,7 +104,7 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
             </div>
             <h1>{banner?.title || 'Contact & Delivery'}</h1>
             <p>
-              {banner?.text || 'Order via WhatsApp for rapid dispatch, inquire about event catering, or ask our bakery team about delivery to your area in Mbeya.'}
+              {banner?.text || bt(content.biz, 'Order via WhatsApp for rapid dispatch, inquire about event catering, or ask our bakery team about delivery to your area in Mbeya.')}
             </p>
           </div>
         </div>
@@ -137,15 +137,17 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
               <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '16px' }}>
                 {contactCards[0]?.text || 'Instant kitchen order dispatch. Send your items or cake inspiration photo.'}
               </p>
-              <a
-                href={content.biz?.whatsapp ? `https://wa.me/${formatWhatsAppNumber(content.biz.whatsapp)}` : RESTAURANT_INFO.whatsappDirectUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-solid"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              >
-                Chat on WhatsApp ↗
-              </a>
+              {waLink(content.biz) && (
+                <a
+                  href={waLink(content.biz, content.biz?.orderGreeting)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-solid"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  Chat on WhatsApp ↗
+                </a>
+              )}
             </div>
 
             {/* CARD 2: PHONE CALLS */}
@@ -164,13 +166,15 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
               <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '16px' }}>
                 {contactCards[1]?.text || 'Speak directly with our counter staff for immediate inquiries and table bookings.'}
               </p>
-              <a
-                href={`tel:${content.biz?.phone ? content.biz.phone.replace(/\s+/g, '') : RESTAURANT_INFO.phoneCall}`}
-                className="btn-outline"
-                style={{ display: 'inline-block', border: '1px solid rgba(36,28,21,0.2)' }}
-              >
-                Call {content.biz?.phone ? content.biz.phone.split('/')[0].trim() : '+255 768 000 111'}
-              </a>
+              {telHref(content.biz) && (
+                <a
+                  href={telHref(content.biz)}
+                  className="btn-outline"
+                  style={{ display: 'inline-block', border: '1px solid rgba(36,28,21,0.2)' }}
+                >
+                  Call {firstPhone(content.biz)}
+                </a>
+              )}
             </div>
 
             {/* CARD 3: INSTAGRAM */}
@@ -187,17 +191,19 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
                 {contactCards[2]?.title || 'Instagram Community'}
               </h3>
               <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                {contactCards[2]?.text || `Join ${content.biz?.followers || RESTAURANT_INFO.instagramFollowers} followers for daily fresh bake reels & cakes.`}
+                {contactCards[2]?.text || `Follow us for daily fresh bake reels & cakes.`}
               </p>
-              <a
-                href={content.biz?.igUrl || RESTAURANT_INFO.instagramUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-outline"
-                style={{ display: 'inline-block', border: '1px solid rgba(36,28,21,0.2)' }}
-              >
-                Follow {content.biz?.instagram || '@zioncakesmbeya'} ↗
-              </a>
+              {content.biz?.igUrl && (
+                <a
+                  href={content.biz.igUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-outline"
+                  style={{ display: 'inline-block', border: '1px solid rgba(36,28,21,0.2)' }}
+                >
+                  Follow {content.biz?.instagram || ''} ↗
+                </a>
+              )}
             </div>
           </div>
 
@@ -212,10 +218,10 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
                 COVERAGE MAP
               </div>
               <h2 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '26px', marginBottom: '12px' }}>
-                {contactPg?.zonesTitle || 'Mbeya Delivery Zones & Rates'}
+                {contactPg?.zonesTitle || bt(content.biz, 'Mbeya Delivery Zones & Rates')}
               </h2>
               <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginBottom: '20px' }}>
-                {contactPg?.zonesText || 'We deliver throughout Mbeya using insulated thermal bags so food arrives hot and cakes arrive pristine.'}
+                {contactPg?.zonesText || bt(content.biz, 'We deliver throughout Mbeya using insulated thermal bags so food arrives hot and cakes arrive pristine.')}
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -288,7 +294,7 @@ export const ContactOrderPage: React.FC<ContactOrderPageProps> = ({
                   <input
                     type="tel"
                     className="form-input"
-                    placeholder="e.g., 0768 000 111"
+                    placeholder="Phone number"
                     value={inquiryPhone}
                     onChange={(e) => setInquiryPhone(e.target.value)}
                     required

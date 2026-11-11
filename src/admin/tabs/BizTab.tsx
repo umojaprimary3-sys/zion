@@ -10,6 +10,8 @@ import { ItemCard } from '../components/ItemCard';
 import {
   TextField,
   TextAreaField,
+  ImageField,
+  SwitchField,
 } from '../components/FormFields';
 
 interface BizTabProps {
@@ -174,6 +176,12 @@ export const BizTab: React.FC<BizTabProps> = ({
             onChange={(val) => updateBiz({ address2: val })}
           />
           <TextField
+            label="City / town name"
+            hint="used in page wording, e.g. Mbeya"
+            value={store.biz.city || ''}
+            onChange={(val) => updateBiz({ city: val })}
+          />
+          <TextField
             label="Phone (shown)"
             value={store.biz.phone}
             onChange={(val) => updateBiz({ phone: val })}
@@ -225,6 +233,124 @@ export const BizTab: React.FC<BizTabProps> = ({
             value={store.biz.followers}
             onChange={(val) => updateBiz({ followers: val })}
           />
+        </div>
+      </section>
+
+      {/* SETUP CHECKLIST */}
+      <section className="za-sec">
+        <div className="za-sh">
+          <div>
+            <h2>Setup checklist</h2>
+            <p>Anything left blank is hidden or disabled on the public site. Fill it in and it goes live for every visitor instantly.</p>
+          </div>
+        </div>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '6px', fontSize: '13px' }}>
+          {([
+            ['WhatsApp number (enables order buttons)', store.biz.whatsapp],
+            ['Phone number', store.biz.phone],
+            ['Business email', store.biz.email],
+            ['Instagram link', store.biz.igUrl],
+            ['Logo', store.biz.logoUrl],
+            ['Favicon', store.biz.faviconUrl],
+            ['Share image (Open Graph)', store.biz.ogImage],
+            ['SEO title and description', store.biz.seoTitle && store.biz.seoDescription],
+            ['Payment methods', store.biz.paymentMethods],
+            ['Privacy policy', store.biz.privacyText],
+            ['Terms & conditions', store.biz.termsText],
+            ['Analytics ID', store.biz.analyticsId],
+            ['Email API URL (Email tab → settings)', store.cfg?.api],
+          ] as Array<[string, string | undefined]>).map(([label, v]) => (
+            <li key={label}>{v && String(v).trim() ? '✅' : '⬜'} {label}</li>
+          ))}
+        </ul>
+      </section>
+
+      {/* ORDERS & PAYMENTS */}
+      <section className="za-sec">
+        <div className="za-sh">
+          <div>
+            <h2>Orders & payments</h2>
+            <p>Shown at checkout and in WhatsApp order messages.</p>
+          </div>
+        </div>
+        <div className="za-g2">
+          <TextField
+            label="WhatsApp greeting"
+            hint="first line of every order message"
+            value={store.biz.orderGreeting || ''}
+            onChange={(val) => updateBiz({ orderGreeting: val })}
+            fullWidth
+          />
+          <TextField
+            label="Payment methods"
+            hint="e.g. M-Pesa, Tigo Pesa, Airtel Money, Cash"
+            value={store.biz.paymentMethods || ''}
+            onChange={(val) => updateBiz({ paymentMethods: val })}
+            fullWidth
+          />
+          <TextAreaField
+            label="Payment instructions"
+            hint="e.g. Lipa number, bank account"
+            value={store.biz.paymentInstructions || ''}
+            onChange={(val) => updateBiz({ paymentInstructions: val })}
+            fullWidth
+          />
+          <TextField
+            label="Google Maps embed link"
+            hint="optional — built from your address if blank"
+            value={store.biz.mapEmbed || ''}
+            onChange={(val) => updateBiz({ mapEmbed: val })}
+            fullWidth
+          />
+        </div>
+      </section>
+
+      {/* BRANDING & SEO */}
+      <section className="za-sec">
+        <div className="za-sh">
+          <div>
+            <h2>Branding, SEO & analytics</h2>
+            <p>Logo, favicon, search-engine and social-share details.</p>
+          </div>
+        </div>
+        <div className="za-g2">
+          <ImageField label="Logo" value={store.biz.logoUrl || ''} onChange={(val) => updateBiz({ logoUrl: val })} />
+          <ImageField label="Favicon" value={store.biz.faviconUrl || ''} onChange={(val) => updateBiz({ faviconUrl: val })} />
+          <ImageField label="Share image (Open Graph)" hint="1200×630 recommended" value={store.biz.ogImage || ''} onChange={(val) => updateBiz({ ogImage: val })} />
+          <TextField
+            label="Google Analytics ID"
+            hint="G-XXXXXXXXXX"
+            value={store.biz.analyticsId || ''}
+            onChange={(val) => updateBiz({ analyticsId: val })}
+          />
+          <TextField
+            label="SEO title"
+            value={store.biz.seoTitle || ''}
+            onChange={(val) => updateBiz({ seoTitle: val })}
+            fullWidth
+          />
+          <TextAreaField
+            label="SEO description"
+            value={store.biz.seoDescription || ''}
+            onChange={(val) => updateBiz({ seoDescription: val })}
+            fullWidth
+          />
+        </div>
+      </section>
+
+      {/* LEGAL */}
+      <section className="za-sec">
+        <div className="za-sh">
+          <div>
+            <h2>Legal pages</h2>
+            <p>Shown at #privacy and #terms and linked in the footer once filled. Have them reviewed by a lawyer.</p>
+          </div>
+        </div>
+        <div className="za-g2">
+          <TextAreaField label="Privacy policy" rows={8} value={store.biz.privacyText || ''} onChange={(val) => updateBiz({ privacyText: val })} fullWidth />
+          <TextAreaField label="Terms & conditions" rows={8} value={store.biz.termsText || ''} onChange={(val) => updateBiz({ termsText: val })} fullWidth />
+          <TextAreaField label="Cookie notice text" value={store.biz.cookieText || ''} onChange={(val) => updateBiz({ cookieText: val })} fullWidth />
+          <SwitchField label="Show cookie notice" checked={store.biz.showCookieNotice !== false} onChange={(v) => updateBiz({ showCookieNotice: v })} fullWidth />
         </div>
       </section>
 

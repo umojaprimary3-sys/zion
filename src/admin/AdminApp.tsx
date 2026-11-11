@@ -52,11 +52,15 @@ const TABS: TabDef[] = [
 ];
 
 export default function AdminApp() {
+  // Passcode is a LOCAL-DEVELOPMENT convenience only (npm run dev). It does not exist in production builds.
+  const devPasscode: string = import.meta.env.DEV ? import.meta.env.VITE_ADMIN_PASSCODE || '' : '';
   const [store, setStore] = useStore();
   const [activeTab, setActiveTab] = useState<string>('overview');
 
   // Auth & Lock state
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
+    // Production: never trust browser storage. Access is granted only by a verified Supabase admin session.
+    if (!import.meta.env.DEV) return false;
     try {
       return sessionStorage.getItem('zl') === '1';
     } catch {
@@ -66,7 +70,7 @@ export default function AdminApp() {
   const [adminUserEmail, setAdminUserEmail] = useState<string | null>(null);
 
   // Login form inputs
-  const [loginMethod, setLoginMethod] = useState<'passcode' | 'supabase'>('passcode');
+  const [loginMethod, setLoginMethod] = useState<'passcode' | 'supabase'>(devPasscode ? 'passcode' : 'supabase');
   const [passcodeInput, setPasscodeInput] = useState('');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
@@ -74,30 +78,15 @@ export default function AdminApp() {
   const [passcodeError, setPasscodeError] = useState('');
 
   // Check if a Supabase auth user has admin permissions
+  // Admin status is decided by the database (is_admin() function) — the same rule that enforces RLS.
   const checkIfUserIsAdmin = async (user: any): Promise<boolean> => {
     if (!user) return false;
-    // Customer accounts explicitly have role 'customer'
-    if (user.user_metadata?.role === 'customer') return false;
-    // Admin role in metadata
-    if (user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin') return true;
-    
-    // Check database admins table if configured
     try {
-      const { data, error } = await supabase
-        .from('admins')
-        .select('user_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (!error && data) return true;
+      const { data, error } = await supabase.rpc('is_admin');
+      return !error && data === true;
     } catch {
-      // Table may not exist yet
+      return false;
     }
-
-    // Default admin email fallback
-    if (user.email && (user.email.toLowerCase().includes('admin') || user.email === 'orders@zioncakesmbeya.com')) {
-      return true;
-    }
-    return false;
   };
 
   // Check Supabase session on mount
@@ -150,12 +139,9 @@ export default function AdminApp() {
   const [toastCanUndo, setToastCanUndo] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
 
-  const expectedPasscode =
-    import.meta.env.VITE_ADMIN_PASSCODE || 'zion2026';
-
   const handlePasscodeLogin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (passcodeInput === expectedPasscode) {
+    if (devPasscode && passcodeInput === devPasscode) {
       try {
         sessionStorage.setItem('zl', '1');
       } catch {
@@ -194,11 +180,6 @@ export default function AdminApp() {
         }
         setIsUnlocked(true);
         setAdminUserEmail(data.user.email || 'Admin');
-        try {
-          sessionStorage.setItem('zl', '1');
-        } catch {
-          // Ignored
-        }
       }
     } catch (err: unknown) {
       setPasscodeError(err instanceof Error ? err.message : 'Login failed');
@@ -367,14 +348,14 @@ export default function AdminApp() {
         <div className="za-lk" id="admin-passcode-overlay">
           <div className="za-mb" style={{ maxWidth: '400px' }}>
             <div className="za-f" style={{ fontSize: '28px', letterSpacing: '1px' }}>
-              ZION ADMIN
+              ADMIN
             </div>
             <p style={{ color: 'var(--za-mu)', margin: '6px 0 16px' }}>
-              Sign in to manage Zion Cakes &amp; Bites
+              Sign in to manage your website
             </p>
 
-            {/* TAB SELECTOR: PASSCODE OR SUPABASE AUTH */}
-            <div
+            {/* TAB SELECTOR: PASSCODE (dev only) OR SUPABASE AUTH */}
+            {devPasscode && (<div
               style={{
                 display: 'flex',
                 background: 'rgba(255,255,255,0.06)',
@@ -406,13 +387,13 @@ export default function AdminApp() {
               >
                 ⚡ Supabase Auth
               </button>
-            </div>
+            </div>)}
 
-            {loginMethod === 'passcode' ? (
+            {devPasscode && loginMethod === 'passcode' ? (
               <form onSubmit={handlePasscodeLogin}>
                 <input
                   type="password"
-                  placeholder="Preview Passcode (zion2026)"
+                  placeholder="Local dev passcode"
                   value={passcodeInput}
                   onChange={(e) => setPasscodeInput(e.target.value)}
                   autoComplete="off"
@@ -435,16 +416,13 @@ export default function AdminApp() {
                 >
                   Unlock Admin Panel
                 </button>
-                <p className="za-hint" style={{ margin: '14px 0 0' }}>
-                  Preview passcode: <b>zion2026</b>. For production RLS enforcement, use Supabase Auth.
-                </p>
               </form>
             ) : (
               <form onSubmit={handleSupabaseLogin}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <input
                     type="email"
-                    placeholder="Admin Email (e.g. admin@zion.com)"
+                    placeholder="Admin email"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     autoComplete="email"

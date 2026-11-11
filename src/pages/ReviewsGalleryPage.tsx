@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { bt } from '../lib/biz';
 import { PageId, ReviewItem } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
 import { REVIEWS_DATA, GALLERY_IMAGES } from '../data/reviewsData';
@@ -32,7 +33,7 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
         return approved.map((r, idx) => ({
           id: r.id || `rev-${idx}`,
           author: r.author,
-          location: r.location || 'Mbeya',
+          location: r.location || bt(content.biz, 'Mbeya'),
           rating: r.rating,
           comment: r.comment,
           date: r.date || 'Recent',
@@ -65,7 +66,7 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
     try {
       await saveReviewToStore({
         author: authorName || 'Anonymous',
-        location: authorLocation || 'Mbeya',
+        location: authorLocation || bt(content.biz, 'Mbeya'),
         rating: ratingVal,
         comment: commentText,
         occasion: occasionText,
@@ -103,9 +104,9 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
             <div className="eyebrow" style={{ color: 'var(--terracotta)' }}>
               {banner?.eyebrow || 'TESTIMONIALS & MOMENTS'}
             </div>
-            <h1>{banner?.title || 'What Mbeya Is Saying'}</h1>
+            <h1>{banner?.title || bt(content.biz, 'What Mbeya Is Saying')}</h1>
             <p>
-              {banner?.text || 'Real stories from birthday celebrations, office lunches, and weekend gatherings with Zion Cakes & Bites.'}
+              {banner?.text || bt(content.biz, 'Real stories from birthday celebrations, office lunches, and weekend gatherings with Zion Cakes & Bites.')}
             </p>
           </div>
         </div>
@@ -144,7 +145,7 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
               </div>
               <div>
                 <b style={{ fontSize: '15px', color: 'var(--text-dark)' }}>
-                  {content.home?.rating?.label || 'Loved by hundreds in Mbeya'}
+                  {content.home?.rating?.label || bt(content.biz, 'Loved by hundreds in Mbeya')}
                 </b>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                   {content.biz?.reviewsCount ? `${content.biz.reviewsCount} verified Google Reviews` : '87 verified Google Reviews'} · Over 6,890+ happy cake lovers
@@ -174,7 +175,7 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
               }}
             >
               <h3 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '22px', marginBottom: '8px' }}>
-                Share Your Experience at Zion
+                {bt(content.biz, 'Share Your Experience at Zion')}
               </h3>
               <p style={{ fontSize: '13px', color: '#cfc6b8', marginBottom: '20px' }}>
                 Tell our baking team how your food or custom celebration cake was.
@@ -211,7 +212,7 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label style={{ color: '#cfc6b8' }}>Location in Mbeya</label>
+                    <label style={{ color: '#cfc6b8' }}>{bt(content.biz, 'Location in Mbeya')}</label>
                     <input
                       type="text"
                       className="form-input"
@@ -311,7 +312,7 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
             Moments from the Kitchen & Dining Room
           </h2>
           <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '30px' }}>
-            A snapshot of daily life, custom celebrations, and freshly prepared orders at Zion.
+            {bt(content.biz, 'A snapshot of daily life, custom celebrations, and freshly prepared orders at Zion.')}
           </p>
 
           <div
@@ -375,7 +376,7 @@ export const ReviewsGalleryPage: React.FC<ReviewsGalleryPageProps> = ({
 
           {/* CTA BANNER */}
           <div className="cta-banner">
-            <h3>Ready to experience Zion Cakes & Bites?</h3>
+            <h3>{bt(content.biz, 'Ready to experience Zion Cakes & Bites?')}</h3>
             <div className="cta-actions">
               <button
                 className="btn-solid"

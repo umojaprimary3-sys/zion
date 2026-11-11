@@ -1,12 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const defaultUrl = 'https://epmbgzhhhdfxduqjqfjw.supabase.co';
-const defaultAnonKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwbWJnemhoaGRmeGR1cWpxZmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3Nzc5NzAsImV4cCI6MjEwNjM1Mzk3MH0.lW9N2_CwN2hCRGN2WftVH1NDbqBkJlRGo8r8FiLhnHo';
-
 // Read credentials strictly from import.meta.env as required
-const rawUrl = (import.meta.env.VITE_SUPABASE_URL || defaultUrl).trim();
-const rawAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || defaultAnonKey).trim();
+const rawUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+const rawAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
 // Runtime configuration fallback (e.g. if configured through Engineer tab in preview)
 let runtimeUrl = '';
@@ -31,8 +27,8 @@ export const isSupabaseConfigured = (): boolean => {
 };
 
 // Fallback safe URL so createClient does not crash if env vars are missing during initial build
-const safeUrl = isSupabaseConfigured() ? activeSupabaseUrl : defaultUrl;
-const safeKey = isSupabaseConfigured() ? activeSupabaseAnonKey : defaultAnonKey;
+const safeUrl = isSupabaseConfigured() ? activeSupabaseUrl : 'https://placeholder.invalid';
+const safeKey = isSupabaseConfigured() ? activeSupabaseAnonKey : 'placeholder-key';
 
 export const supabase: SupabaseClient = createClient(safeUrl, safeKey, {
   auth: {

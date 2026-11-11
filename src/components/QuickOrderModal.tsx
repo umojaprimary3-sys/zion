@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { RESTAURANT_INFO, DELIVERY_ZONES } from '../data/locationData';
+import React, { useState, useEffect, useRef } from 'react';
+import { useModalA11y } from '../lib/useModalA11y';
+import { DELIVERY_ZONES } from '../data/locationData';
+import { waLink, bt } from '../lib/biz';
+import { PaymentInfo } from './PaymentInfo';
 import { PageId } from '../types';
 import { useContent, saveOrderToStore, generateOrderId, formatWhatsAppNumber } from '../data/store';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
@@ -53,6 +56,9 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
     }
   }, [isOpen, isLoggedIn, member, user, initialItemName, zonesList]);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, onClose, dialogRef);
+
   if (!isOpen) return null;
 
   const handleWhatsAppSend = async (e: React.FormEvent) => {
@@ -61,7 +67,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
     setSubmitError('');
 
     const nameStr = customerName.trim() || member?.name || 'Valued Customer';
-    let text = `Hello Zion Cakes & Bites Mbeya!\n\n`;
+    let text = `${content.biz?.orderGreeting || 'Hello!'}\n\n`;
     text += `*Customer:* ${nameStr}\n`;
     if (customerPhone.trim()) {
       text += `*Phone:* ${customerPhone.trim()}\n`;
@@ -71,7 +77,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
       text += `*Delivery Location:* ${selectedZone}\n`;
     }
     text += `*Order Items / Request:*\n${orderNotes || 'Please share your daily specials'}\n\n`;
-    text += `Sent from Zion Cakes & Bites App`;
+    text += `Sent from ${content.biz?.name || 'our website'}`;
 
     // Save order record to Supabase store
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -102,11 +108,13 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
       console.warn('Order saved locally/fallback warning:', err);
     }
 
-    const waNum = formatWhatsAppNumber(content.biz?.whatsapp) || RESTAURANT_INFO.whatsappNumber;
-    const encoded = encodeURIComponent(text);
-    const url = `https://wa.me/${waNum}?text=${encoded}`;
+    const url = waLink(content.biz, text);
     setIsSubmitting(false);
-    window.open(url, '_blank');
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      window.alert('Thank you! Your order has been received. We will contact you shortly.');
+    }
     onClose();
   };
 
@@ -130,17 +138,22 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
           overflowY: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={content.pg?.order?.title || 'Place your order'}
+        tabIndex={-1}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
             <h3 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '22px' }}>
-              {content.pg?.order?.title || 'Order with Zion Mbeya'}
+              {content.pg?.order?.title || 'Place your order'}
             </h3>
             <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
               {content.pg?.order?.text || 'Direct ordering on WhatsApp with instant kitchen dispatch.'}
             </p>
           </div>
-          <button
+          <button aria-label="Close"
             type="button"
             onClick={onClose}
             style={{
@@ -257,7 +270,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
             <input
               type="tel"
               className="form-input"
-              placeholder="e.g., 0768 000 111"
+              placeholder="Phone number"
               value={customerPhone}
               onChange={(e) => setCustomerPhone(e.target.value)}
             />
@@ -265,7 +278,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
 
           {orderType === 'delivery' && (
             <div className="form-group">
-              <label>Delivery Area in Mbeya</label>
+              <label>{bt(content.biz, 'Delivery Area in Mbeya')}</label>
               <select
                 className="form-select"
                 value={selectedZone}
@@ -292,6 +305,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
             />
           </div>
 
+          <PaymentInfo compact />
           <div
             style={{
               background: 'var(--mint)',
@@ -303,7 +317,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
               lineHeight: '1.4',
             }}
           >
-            💬 Clicking below will open WhatsApp with your pre-filled message sent straight to our Mbeya kitchen team!
+            {waLink(content.biz) ? bt(content.biz, '💬 Clicking below will open WhatsApp with your pre-filled message sent straight to our Mbeya kitchen team!') : 'Your order is saved instantly and our team will contact you to confirm.'}
           </div>
 
           <button

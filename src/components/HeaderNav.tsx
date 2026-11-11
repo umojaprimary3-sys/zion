@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { useModalA11y } from '../lib/useModalA11y';
 import { PageId } from '../types';
-import { RESTAURANT_INFO } from '../data/locationData';
+import { addressLine, bt } from '../lib/biz';
 import { useContent } from '../data/store';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 
@@ -20,6 +21,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   isHeroMode = false,
 }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  useModalA11y(drawerOpen, () => setDrawerOpen(false), drawerRef);
   const content = useContent();
   const { user, member, isLoggedIn, signOut } = useCustomerAuth();
 
@@ -36,7 +39,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
     { id: 'menu', label: navLabels[1]?.label || 'Full Menu', icon: '🍰', desc: navLabels[1]?.desc || 'Cakes, pizza, chicken, drinks' },
     { id: 'custom-cakes', label: navLabels[2]?.label || 'Custom Cake Orders', icon: '🎂', desc: navLabels[2]?.desc || 'Flavors, sizes & occasions' },
     { id: 'about', label: navLabels[3]?.label || 'About & Location', icon: '📍', desc: navLabels[3]?.desc || 'Store hours, Wi-Fi & dine-in' },
-    { id: 'contact', label: navLabels[4]?.label || 'Contact & Delivery', icon: '📞', desc: navLabels[4]?.desc || 'Mbeya delivery zones & fees' },
+    { id: 'contact', label: navLabels[4]?.label || 'Contact & Delivery', icon: '📞', desc: navLabels[4]?.desc || bt(content.biz, 'Mbeya delivery zones & fees') },
     { id: 'reviews', label: navLabels[5]?.label || 'Reviews & Moments', icon: '★', desc: navLabels[5]?.desc || 'Customer stories & gallery' },
   ];
 
@@ -186,6 +189,11 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           <div
             className="mobile-nav-drawer"
             id="mobile-nav-drawer"
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu"
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
           >
             <div>
@@ -207,10 +215,10 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                       color: '#fff',
                     }}
                   >
-                    {content.biz?.name?.split(' ')[0] || 'ZION'}
+                    {content.biz?.logoUrl ? <img loading="lazy" decoding="async" src={content.biz.logoUrl} alt={content.biz?.name || 'Logo'} style={{ height: 34, maxWidth: 160, objectFit: 'contain' }} /> : (content.biz?.name?.split(' ')[0] || '')}
                   </h3>
                   <p style={{ fontSize: '12px', color: 'var(--terracotta)', fontWeight: 500 }}>
-                    {content.biz?.name?.includes('Cakes') ? 'Cakes & Bites · Mbeya' : (content.biz?.name || 'Cakes & Bites · Mbeya')}
+                    {content.biz?.name || ''}
                   </p>
                 </div>
                 <button
@@ -414,9 +422,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                   lineHeight: '1.5',
                 }}
               >
-                📍 {content.biz?.address1 || RESTAURANT_INFO.location}, {content.biz?.address2 || 'Mbeya'}
-                <br />
-                📞 {content.biz?.phone || RESTAURANT_INFO.phoneDisplay}
+                {addressLine(content.biz) && <>📍 {addressLine(content.biz)}<br /></>}
+                {content.biz?.phone && <>📞 {content.biz.phone}</>}
               </div>
             </div>
           </div>

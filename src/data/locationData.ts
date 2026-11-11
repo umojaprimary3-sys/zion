@@ -1,25 +1,5 @@
 import { DeliveryZone } from '../types';
 
-export const RESTAURANT_INFO = {
-  name: 'Zion Cakes & Bites',
-  location: 'Forest Mpya, Maghorofani, Mbeya, Tanzania',
-  addressLine1: 'Forest Mpya, Maghorofani',
-  addressCity: 'Mbeya City, Tanzania',
-  phoneDisplay: '+255 768 000 111 / +255 689 123 456',
-  phoneCall: '+255768000111',
-  whatsappNumber: '255768000111',
-  whatsappDirectUrl: 'https://wa.me/255768000111?text=Hello%20Zion%20Cakes%20%26%20Bites%20Mbeya,%20I%20would%20like%20to%20place%20an%20order!',
-  email: 'orders@zioncakesmbeya.com',
-  instagram: '@zioncakesmbeya',
-  instagramUrl: 'https://instagram.com/zioncakesmbeya',
-  googleRating: '4.1',
-  googleReviewsCount: '87 Google Reviews',
-  instagramFollowers: '6,896+',
-  googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Zion+Bakery+Forest+Mpya+Maghorofani+Mbeya+Tanzania',
-  directionsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Zion+Bakery+Forest+Mpya+Maghorofani+Mbeya+Tanzania',
-  nominatimGeocodingUrl: 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=Zion%20Bakery%2C%20Forest%20Mpya%2C%20Maghorofani%2C%20Mbeya%2C%20Tanzania',
-};
-
 export const OPERATING_HOURS = [
   { days: 'Monday – Thursday', hours: '07:30 AM – 10:00 PM', status: 'Open Daily' },
   { days: 'Friday – Saturday', hours: '07:30 AM – 11:00 PM', status: 'Weekend Music & Late Bites' },

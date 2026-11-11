@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { PageId } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
-import { FAQ_ITEMS, RESTAURANT_INFO } from '../data/locationData';
+import { FAQ_ITEMS } from '../data/locationData';
+import { mapUrl, dirUrl, mapEmbedSrc, addressLine, bt } from '../lib/biz';
 import { useContent } from '../data/store';
 
 interface HomePageProps {
@@ -23,11 +24,9 @@ export const HomePage: React.FC<HomePageProps> = ({
   const hero = content.home?.hero;
   const rating = content.home?.rating;
   const sig = content.home?.sig;
-  const stats = content.home?.stats || [
-    { t: '4.1/5', s: 'Google Rating (87 reviews)' },
-    { t: '6,896+', s: 'Instagram Followers' },
-    { t: 'Fresh Daily', s: 'Made-to-order' },
-  ];
+  const ratingScore = rating?.score || (content.biz?.rating ? `${content.biz.rating}★` : '');
+  const ratingLabel = rating?.label || content.biz?.reviewsCount || '';
+  const stats = (content.home?.stats || []).filter((st) => st.t && st.t.trim());
   const serves = content.home?.serves;
   const test = content.home?.test;
   const moment = content.home?.moment;
@@ -57,7 +56,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           />
 
           <div className="hero-body" id="hero-body">
-            <img
+            <img loading="eager" fetchPriority="high" decoding="async"
               src={hero?.image || "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?q=80&w=1400&auto=format&fit=crop"}
               alt="Birthday cake with lit candles"
               id="hero-cake-image"
@@ -80,7 +79,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 )}
               </h1>
               <p>
-                {hero?.text || "Cakes, pizza, shawarma, chicken and more — baked and cooked fresh daily in Mbeya, ready for dine-in, pickup, or delivery."}
+                {hero?.text || bt(content.biz, "Cakes, pizza, shawarma, chicken and more — baked and cooked fresh daily in Mbeya, ready for dine-in, pickup, or delivery.")}
               </p>
             </div>
             <div className="hero-cards" id="hero-cards">
@@ -90,11 +89,13 @@ export const HomePage: React.FC<HomePageProps> = ({
                 style={{ cursor: 'pointer' }}
                 onClick={() => onNavigate('reviews')}
               >
-                <h3>{rating?.title || "Loved By Mbeya"}</h3>
+                <h3>{rating?.title || bt(content.biz, "Loved By Mbeya")}</h3>
                 <p>{rating?.text || "Trusted by hundreds of happy customers across the city."}</p>
-                <div className="rating-big">
-                  {rating?.score || "4.1★"} <span>{rating?.label || "87 Google Reviews"}</span>
-                </div>
+                {ratingScore && (
+                  <div className="rating-big">
+                    {ratingScore} <span>{ratingLabel}</span>
+                  </div>
+                )}
               </div>
               <div
                 className="info-card signature-card"
@@ -103,7 +104,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 onClick={() => onNavigate('custom-cakes')}
               >
                 <h3>{sig?.title || "Signature Celebration Cake"}</h3>
-                <div className="loc">{sig?.location || "Njia Panda ya Hospitali, Mbeya"}</div>
+                <div className="loc">{sig?.location || bt(content.biz, "Njia Panda ya Hospitali, Mbeya")}</div>
                 <p>{sig?.text || "Custom flavors, fillings and decorations for birthdays, weddings and special occasions."}</p>
                 <div className="signature-meta">
                   <div>{sig?.m0 || "Fresh daily"}</div>
@@ -120,7 +121,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* SERVES */}
       <section className="serves" id="serves-section">
         <div className="wrap">
-          <h2>{serves?.title || "Everything Zion Serves You"}</h2>
+          <h2>{serves?.title || bt(content.biz, "Everything Zion Serves You")}</h2>
           <p>{serves?.sub || "From everyday meals to custom celebration cakes — dine in, drive through, or get it delivered."}</p>
           <div className="grid-3" id="serves-grid">
             {(serves?.cards || []).map((card, idx) => {
@@ -139,7 +140,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   style={{ cursor: 'pointer' }}
                   onClick={() => onNavigate(navTarget)}
                 >
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={card.image}
                     alt={card.title}
                   />
@@ -153,7 +154,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             })}
           </div>
 
-          <div className="stats-bar" id="stats-bar">
+          <div className="stats-bar" id="stats-bar" style={stats.length ? undefined : { display: 'none' }}>
             {stats.map((st, i) => (
               <div key={i}>
                 {i === 0 && '★ '}
@@ -189,7 +190,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* TESTIMONIALS */}
       <section className="testimonials" id="testimonials-section">
         <div className="wrap">
-          <h2>{test?.title || "What Mbeya Is Saying"}</h2>
+          <h2>{test?.title || bt(content.biz, "What Mbeya Is Saying")}</h2>
           <p>{test?.sub || "A few kind words from our customers."}</p>
 
           <div className="story-grid" id="story-grid">
@@ -199,7 +200,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               style={{ cursor: 'pointer' }}
               onClick={() => onNavigate('reviews')}
             >
-              <img
+              <img loading="lazy" decoding="async"
                 src={test?.p0i || "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?q=80&w=1000&auto=format&fit=crop"}
                 alt="Customer story"
               />
@@ -213,7 +214,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               style={{ cursor: 'pointer' }}
               onClick={() => onNavigate('reviews')}
             >
-              <img
+              <img loading="lazy" decoding="async"
                 src={test?.p1i || "https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1000&auto=format&fit=crop"}
                 alt="Kitchen moments"
               />
@@ -239,9 +240,9 @@ export const HomePage: React.FC<HomePageProps> = ({
       <section className="moment" id="moment-section">
         <div className="wrap">
           <h2>{moment?.title || "More Than A Meal, It's A Moment"}</h2>
-          <p>{moment?.sub || "Settle in for good food, easy conversations, and the little extras that make Zion feel like your place in Mbeya."}</p>
+          <p>{moment?.sub || bt(content.biz, "Settle in for good food, easy conversations, and the little extras that make Zion feel like your place in Mbeya.")}</p>
           <div className="moment-img" id="moment-img">
-            <img
+            <img loading="lazy" decoding="async"
               src={moment?.image || "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?q=80&w=1200&auto=format&fit=crop"}
               alt="Cafe interior"
             />
@@ -288,11 +289,11 @@ export const HomePage: React.FC<HomePageProps> = ({
           <div className="location-card" id="location-card">
             <div className="location-left" id="location-left">
               <div className="eyebrow">COME FIND US</div>
-              <h2>Your Zion moment starts in Mbeya.</h2>
-              <div className="addr">📍 {content.biz?.address1 || 'Forest Mpya, Maghorofani'}, {content.biz?.address2 || 'Mbeya, Tanzania'}</div>
+              <h2>{bt(content.biz, 'Your Zion moment starts in Mbeya.')}</h2>
+              <div className="addr">📍 {addressLine(content.biz)}</div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
                 <a
-                  href={content.biz?.mapUrl || RESTAURANT_INFO.googleMapsUrl}
+                  href={mapUrl(content.biz)}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-solid"
@@ -302,7 +303,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   Open in Google Maps ↗
                 </a>
                 <a
-                  href={content.biz?.dirUrl || RESTAURANT_INFO.directionsUrl}
+                  href={dirUrl(content.biz)}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-outline"
@@ -318,9 +319,9 @@ export const HomePage: React.FC<HomePageProps> = ({
               id="location-right"
             >
               <iframe
-                title="Zion Cakes & Bites Location Map"
+                title={bt(content.biz, "Zion Cakes & Bites Location Map")}
                 className="location-map-frame"
-                src="https://maps.google.com/maps?q=Forest+Mpya,+Maghorofani,+Mbeya,+Tanzania&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                src={mapEmbedSrc(content.biz)}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
@@ -328,12 +329,12 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <div className="location-map-badge">
                   <div className="pin">📍</div>
                   <div>
-                    <b>{content.biz?.name || 'Zion Cakes & Bites'}</b>
-                    <span>{content.biz?.address1 || 'Forest Mpya, Maghorofani'}, {content.biz?.address2?.split(',')[0] || 'Mbeya'}</span>
+                    <b>{content.biz?.name}</b>
+                    <span>{addressLine(content.biz)}</span>
                   </div>
                 </div>
                 <a
-                  href={content.biz?.mapUrl || RESTAURANT_INFO.googleMapsUrl}
+                  href={mapUrl(content.biz)}
                   target="_blank"
                   rel="noreferrer"
                   className="location-map-link-btn"

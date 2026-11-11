@@ -9,7 +9,9 @@ export type PageId =
   | 'login'
   | 'register'
   | 'forgot-password'
-  | 'reset-password';
+  | 'reset-password'
+  | 'privacy'
+  | 'terms';
 
 export type MenuCategory = 
   | 'all'

@@ -109,8 +109,8 @@ export const MailTab: React.FC<MailTabProps> = ({
     onToast('Sending…');
 
     const payload = {
-      from: store.cfg.from || 'orders@zioncakesmbeya.com',
-      fromName: store.cfg.fromName || 'Zion Cakes & Bites',
+      from: store.cfg.from || store.biz.email || '',
+      fromName: store.cfg.fromName || store.biz.name,
       subject: draft.subj,
       messages: recipients.map((r) => ({
         to: r.email,

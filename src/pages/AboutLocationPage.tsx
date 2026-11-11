@@ -1,7 +1,8 @@
 import React from 'react';
 import { PageId } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
-import { OPERATING_HOURS, RESTAURANT_INFO } from '../data/locationData';
+import { OPERATING_HOURS } from '../data/locationData';
+import { mapUrl, dirUrl, mapEmbedSrc, addressLine, bt } from '../lib/biz';
 import { useContent } from '../data/store';
 
 interface AboutLocationPageProps {
@@ -33,9 +34,9 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
             <div className="eyebrow" style={{ color: 'var(--terracotta)' }}>
               {banner?.eyebrow || 'OUR STORY & PHYSICAL LOCATION'}
             </div>
-            <h1>{banner?.title || 'About Zion Cakes & Bites'}</h1>
+            <h1>{banner?.title || bt(content.biz, 'About Zion Cakes & Bites')}</h1>
             <p>
-              {banner?.text || 'Founded in the heart of Mbeya, dedicated to elevating everyday dining, family celebrations, and artisan baking.'}
+              {banner?.text || bt(content.biz, 'Founded in the heart of Mbeya, dedicated to elevating everyday dining, family celebrations, and artisan baking.')}
             </p>
           </div>
         </div>
@@ -50,7 +51,7 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
                 {about?.eyebrow || 'LOCAL ROOTS · FRESH DAILY'}
               </div>
               <h2>
-                {about?.title || "From a local home oven to Mbeya's favorite food hub."}
+                {about?.title || bt(content.biz, "From a local home oven to Mbeya's favorite food hub.")}
               </h2>
               <p className="story-lead">
                 {about?.lead || (
@@ -78,9 +79,9 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
             </div>
 
             <div className="about-img-container">
-              <img
+              <img loading="lazy" decoding="async"
                 src={content.home?.aboutPhoto || "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?q=80&w=1000&auto=format&fit=crop"}
-                alt="Zion cafe interior"
+                alt={bt(content.biz, "Zion cafe interior")}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             </div>
@@ -92,7 +93,7 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
       <section className="moment" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <h2>More Than A Meal, It's A Moment</h2>
-          <p>Settle in for good food, easy conversations, and the little extras that make Zion feel like your place in Mbeya.</p>
+          <p>{bt(content.biz, 'Settle in for good food, easy conversations, and the little extras that make Zion feel like your place in Mbeya.')}</p>
           
           <div className="moment-grid">
             <div className="moment-card" id="about-music">
@@ -120,11 +121,9 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
           <div className="location-card">
             <div className="location-left">
               <div className="eyebrow">PHYSICAL STORE & DINE-IN</div>
-              <h2>Your Zion moment starts in Mbeya.</h2>
+              <h2>{bt(content.biz, 'Your Zion moment starts in Mbeya.')}</h2>
               <div className="addr">
-                📍 {content.biz?.address1 || RESTAURANT_INFO.addressLine1}
-                <br />
-                {content.biz?.address2 || RESTAURANT_INFO.addressCity}
+                📍 {addressLine(content.biz)}
               </div>
 
               {/* Operating Hours Table */}
@@ -160,7 +159,7 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
 
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <a
-                  href={content.biz?.mapUrl || RESTAURANT_INFO.googleMapsUrl}
+                  href={mapUrl(content.biz)}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-solid"
@@ -168,7 +167,7 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
                   Open in Google Maps ↗
                 </a>
                 <a
-                  href={content.biz?.dirUrl || RESTAURANT_INFO.directionsUrl}
+                  href={dirUrl(content.biz)}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-outline"
@@ -191,9 +190,9 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
               id="about-location-right"
             >
               <iframe
-                title="Zion Cakes & Bites Location Map"
+                title={bt(content.biz, "Zion Cakes & Bites Location Map")}
                 className="location-map-frame"
-                src="https://maps.google.com/maps?q=Forest+Mpya,+Maghorofani,+Mbeya,+Tanzania&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                src={mapEmbedSrc(content.biz)}
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
@@ -201,12 +200,12 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
                 <div className="location-map-badge">
                   <div className="pin">📍</div>
                   <div>
-                    <b>{content.biz?.name || 'Zion Cakes & Bites'}</b>
-                    <span>{content.biz?.address1 || 'Forest Mpya, Maghorofani'}, {content.biz?.address2?.split(',')[0] || 'Mbeya'}</span>
+                    <b>{content.biz?.name}</b>
+                    <span>{addressLine(content.biz)}</span>
                   </div>
                 </div>
                 <a
-                  href={content.biz?.mapUrl || RESTAURANT_INFO.googleMapsUrl}
+                  href={mapUrl(content.biz)}
                   target="_blank"
                   rel="noreferrer"
                   className="location-map-link-btn"
@@ -238,7 +237,7 @@ export const AboutLocationPage: React.FC<AboutLocationPageProps> = ({
               onClick={() => onNavigate('custom-cakes')}
             >
               <h3>Cake Preorders</h3>
-              <p>Plan your celebration early with Zion.</p>
+              <p>{bt(content.biz, 'Plan your celebration early with Zion.')}</p>
             </div>
             <div
               className="reason-card reason-3"

@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { PageId } from './types';
 import { HomePage } from './pages/HomePage';
-import { MenuPage } from './pages/MenuPage';
-import { CustomCakePage } from './pages/CustomCakePage';
-import { AboutLocationPage } from './pages/AboutLocationPage';
-import { ContactOrderPage } from './pages/ContactOrderPage';
-import { ReviewsGalleryPage } from './pages/ReviewsGalleryPage';
-import { CustomerAccountPage } from './pages/CustomerAccountPage';
-import { CustomerAuthPages } from './pages/CustomerAuthPages';
+const MenuPage = React.lazy(() => import('./pages/MenuPage').then((m) => ({ default: m.MenuPage })));
+const CustomCakePage = React.lazy(() => import('./pages/CustomCakePage').then((m) => ({ default: m.CustomCakePage })));
+const AboutLocationPage = React.lazy(() => import('./pages/AboutLocationPage').then((m) => ({ default: m.AboutLocationPage })));
+const ContactOrderPage = React.lazy(() => import('./pages/ContactOrderPage').then((m) => ({ default: m.ContactOrderPage })));
+const ReviewsGalleryPage = React.lazy(() => import('./pages/ReviewsGalleryPage').then((m) => ({ default: m.ReviewsGalleryPage })));
+const CustomerAccountPage = React.lazy(() => import('./pages/CustomerAccountPage').then((m) => ({ default: m.CustomerAccountPage })));
+const CustomerAuthPages = React.lazy(() => import('./pages/CustomerAuthPages').then((m) => ({ default: m.CustomerAuthPages })));
 import { Footer } from './components/Footer';
 import { QuickOrderModal } from './components/QuickOrderModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { CustomerAuthModal } from './components/CustomerAuthModal';
 import { CustomerAuthProvider } from './context/CustomerAuthContext';
+import { SiteHead } from './components/SiteHead';
+import { CookieNotice } from './components/CookieNotice';
+const LegalPage = React.lazy(() => import('./pages/StaticPages').then((m) => ({ default: m.LegalPage })));
+const NotFoundPage = React.lazy(() => import('./pages/StaticPages').then((m) => ({ default: m.NotFoundPage })));
+import { flushPendingOrders } from './data/store';
 
 const AdminApp = React.lazy(() => import('./admin/AdminApp'));
 
@@ -33,7 +38,11 @@ export default function App() {
     'register',
     'forgot-password',
     'reset-password',
+    'privacy',
+    'terms',
   ];
+
+  const [notFound, setNotFound] = useState(false);
 
   const [currentPage, setCurrentPage] = useState<PageId>(() => {
     const rawHash = window.location.hash.replace('#', '');
@@ -66,12 +75,25 @@ export default function App() {
       }
       const cleanHash = rawHash.split('?')[0].replace(/^\//, '') as PageId;
       if (validPages.includes(cleanHash)) {
+        setNotFound(false);
         setCurrentPage(cleanHash);
+      } else if (cleanHash === ('' as PageId)) {
+        setNotFound(false);
+        setCurrentPage('home');
+      } else {
+        setNotFound(true);
       }
     };
 
+    flushPendingOrders().catch(() => undefined);
+    const onOnline = () => flushPendingOrders().catch(() => undefined);
+    window.addEventListener('online', onOnline);
+
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('online', onOnline);
+    };
   }, []);
 
   if (isAdminRoute) {
@@ -83,6 +105,7 @@ export default function App() {
   }
 
   const handleNavigate = (page: PageId) => {
+    setNotFound(false);
     setCurrentPage(page);
     window.location.hash = page === 'home' ? '' : page;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -102,51 +125,59 @@ export default function App() {
     <CustomerAuthProvider>
       <div className="min-h-screen flex flex-col" id="app-root-container">
         {/* RENDER CURRENT VIEW */}
+        <SiteHead page={notFound ? 'not-found' : currentPage} />
         <main className="flex-1" id="main-page-content">
-          {currentPage === 'home' && (
+          <React.Suspense fallback={<div style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>}>
+          {notFound && (
+            <NotFoundPage onNavigate={handleNavigate} onOpenOrderModal={() => handleOpenOrderModal()} />
+          )}
+          {!notFound && (currentPage === 'privacy' || currentPage === 'terms') && (
+            <LegalPage kind={currentPage} onNavigate={handleNavigate} onOpenOrderModal={() => handleOpenOrderModal()} />
+          )}
+          {!notFound && currentPage === 'home' && (
             <HomePage
               onNavigate={handleNavigate}
               onOpenOrderModal={handleOpenOrderModal}
             />
           )}
-          {currentPage === 'menu' && (
+          {!notFound && currentPage === 'menu' && (
             <MenuPage
               onNavigate={handleNavigate}
               onOpenOrderModal={handleOpenOrderModal}
             />
           )}
-          {currentPage === 'custom-cakes' && (
+          {!notFound && currentPage === 'custom-cakes' && (
             <CustomCakePage
               onNavigate={handleNavigate}
               onOpenOrderModal={handleOpenOrderModal}
             />
           )}
-          {currentPage === 'about' && (
+          {!notFound && currentPage === 'about' && (
             <AboutLocationPage
               onNavigate={handleNavigate}
               onOpenOrderModal={() => handleOpenOrderModal()}
             />
           )}
-          {currentPage === 'contact' && (
+          {!notFound && currentPage === 'contact' && (
             <ContactOrderPage
               onNavigate={handleNavigate}
               onOpenOrderModal={() => handleOpenOrderModal()}
             />
           )}
-          {currentPage === 'reviews' && (
+          {!notFound && currentPage === 'reviews' && (
             <ReviewsGalleryPage
               onNavigate={handleNavigate}
               onOpenOrderModal={() => handleOpenOrderModal()}
             />
           )}
-          {currentPage === 'account' && (
+          {!notFound && currentPage === 'account' && (
             <CustomerAccountPage
               onNavigate={handleNavigate}
               onOpenOrderModal={handleOpenOrderModal}
               onOpenAuthModal={handleOpenAuthModal}
             />
           )}
-          {(currentPage === 'login' ||
+          {!notFound && (currentPage === 'login' ||
             currentPage === 'register' ||
             currentPage === 'forgot-password' ||
             currentPage === 'reset-password') && (
@@ -156,6 +187,7 @@ export default function App() {
               onOpenOrderModal={() => handleOpenOrderModal()}
             />
           )}
+          </React.Suspense>
         </main>
 
         {/* SHARED FOOTER ACROSS ALL PAGES */}
@@ -179,6 +211,8 @@ export default function App() {
           initialItemName={selectedOrderItem}
           onOpenAuthModal={handleOpenAuthModal}
         />
+
+        <CookieNotice onNavigate={handleNavigate} />
 
         {/* CUSTOMER AUTH MODAL */}
         <CustomerAuthModal

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { bt } from '../lib/biz';
+import { useContent } from '../data/store';
 import { PageId } from '../types';
 import { HeaderNav } from '../components/HeaderNav';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
@@ -14,6 +16,7 @@ export const CustomerAuthPages: React.FC<CustomerAuthPageProps> = ({
   onNavigate,
   onOpenOrderModal,
 }) => {
+  const content = useContent();
   const { signIn, signUp, sendPasswordReset, updatePassword, isLoggedIn } = useCustomerAuth();
 
   // Form fields
@@ -90,7 +93,7 @@ export const CustomerAuthPages: React.FC<CustomerAuthPageProps> = ({
           return;
         }
 
-        setSuccessMessage('Account created successfully! Welcome to Zion Cakes & Bites.');
+        setSuccessMessage(bt(content.biz, 'Account created successfully! Welcome to Zion Cakes & Bites.'));
         setTimeout(() => {
           setLoading(false);
           onNavigate('account');
@@ -154,7 +157,7 @@ export const CustomerAuthPages: React.FC<CustomerAuthPageProps> = ({
             </h1>
             <p style={{ maxWidth: '480px', margin: '6px auto 0', color: '#cfc6b8', fontSize: '14px' }}>
               {mode === 'login' && 'Track your orders, view order status timelines, and manage delivery details.'}
-              {mode === 'register' && 'Join Zion Cakes & Bites in Mbeya for faster ordering, order tracking and rewards.'}
+              {mode === 'register' && bt(content.biz, 'Join Zion Cakes & Bites in Mbeya for faster ordering, order tracking and rewards.')}
               {mode === 'forgot-password' && 'Enter your email address and we will send you a secure link to reset your password.'}
               {mode === 'reset-password' && 'Enter your new password below.'}
             </p>

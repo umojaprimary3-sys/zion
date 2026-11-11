@@ -7,7 +7,9 @@ import {
   CAKE_OCCASIONS,
   CAKE_DECORATIONS,
 } from '../data/cakeData';
-import { RESTAURANT_INFO, DELIVERY_ZONES } from '../data/locationData';
+import { DELIVERY_ZONES } from '../data/locationData';
+import { waLink, bt } from '../lib/biz';
+import { PaymentInfo } from '../components/PaymentInfo';
 import { useContent, saveOrderToStore, generateOrderId, formatWhatsAppNumber, formatMoney } from '../data/store';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 
@@ -104,7 +106,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
     setOrderError('');
     
     // Format WhatsApp prefilled message
-    let msg = `🎂 *ZION CUSTOM CAKE PREORDER* 🎂\n\n`;
+    let msg = `🎂 *${(content.biz?.name || 'CUSTOM CAKE').toUpperCase()} — CUSTOM CAKE PREORDER* 🎂\n\n`;
     msg += `*Customer Name:* ${customerName || 'Valued Customer'}\n`;
     msg += `*Phone:* ${customerPhone || 'Not specified'}\n`;
     msg += `*Date Needed:* ${dateNeeded || 'Earliest available'}\n`;
@@ -120,7 +122,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
       msg += `*Special Notes:* ${specialInstructions.trim()}\n`;
     }
     msg += `\n*Estimated Total:* ${totalPriceDisplay}\n\n`;
-    msg += `Sent from Zion Cakes & Bites App · Mbeya`;
+    msg += `Sent from ${content.biz?.name || 'our website'}`;
 
     // Save order record to Supabase store
     const todayStr = new Date().toISOString().slice(0, 10);
@@ -158,13 +160,11 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
       console.warn('Could not persist order to Supabase:', err);
     }
 
-    const waNum = formatWhatsAppNumber(content.biz?.whatsapp) || RESTAURANT_INFO.whatsappNumber;
-    const encoded = encodeURIComponent(msg);
-    const url = `https://wa.me/${waNum}?text=${encoded}`;
-    
+    const url = waLink(content.biz, msg);
+
     setIsSubmitting(false);
     setOrderSuccess(true);
-    window.open(url, '_blank');
+    if (url) window.open(url, '_blank');
   };
 
   return (
@@ -225,7 +225,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                 Signature Celebration Cake
               </h2>
               <div style={{ color: 'var(--terracotta)', fontSize: '13px', marginBottom: '12px' }}>
-                📍 {content.biz?.address1 || 'Forest Mpya, Maghorofani'}, {content.biz?.address2 || 'Mbeya'} · Baked Fresh Daily
+                📍 {content.biz?.address1 || 'Forest Mpya, Maghorofani'}, {content.biz?.address2 || bt(content.biz, 'Mbeya')} · Baked Fresh Daily
               </div>
               <p style={{ color: '#cfc6b8', fontSize: '13.5px', lineHeight: '1.5', marginBottom: '16px' }}>
                 Every cake is baked from scratch with pure dairy butter, farm-fresh eggs, and premium chocolate. No artificial preservatives.
@@ -256,7 +256,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                 boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
               }}
             >
-              <img
+              <img loading="lazy" decoding="async"
                 src={content.home?.hero?.image || "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?q=80&w=800&auto=format&fit=crop"}
                 alt="Signature cake"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -286,11 +286,16 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
             >
               <div>
                 <b style={{ color: '#12321f', fontSize: '16px' }}>
-                  ✓ WhatsApp Cake Preorder Link Opened!
+                  {waLink(content.biz) ? '✓ WhatsApp Cake Preorder Link Opened!' : '✓ Cake Preorder Received!'}
                 </b>
                 <p style={{ fontSize: '13px', color: '#12321f', marginTop: '4px' }}>
-                  Your custom cake configuration has been formatted. Complete your chat with our bakery team to confirm pickup or delivery time.
+                  {waLink(content.biz)
+                    ? 'Your custom cake configuration has been formatted. Complete your chat with our bakery team to confirm pickup or delivery time.'
+                    : 'Your custom cake request has been received. Our bakery team will contact you to confirm details.'}
                 </p>
+                <div style={{ marginTop: 8 }}>
+                  <PaymentInfo compact />
+                </div>
               </div>
               <button
                 type="button"
@@ -461,7 +466,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                     <input
                       type="tel"
                       className="form-input"
-                      placeholder="e.g., 0768 000 111"
+                      placeholder="Phone number"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       required
@@ -482,7 +487,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label>Pickup or Delivery in Mbeya?</label>
+                    <label>{bt(content.biz, 'Pickup or Delivery in Mbeya?')}</label>
                     <select
                       className="form-select"
                       value={deliveryType}
@@ -496,7 +501,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
 
                 {deliveryType === 'delivery' && (
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Select Delivery Area in Mbeya</label>
+                    <label>{bt(content.biz, 'Select Delivery Area in Mbeya')}</label>
                     <select
                       className="form-select"
                       value={deliveryZone}
@@ -586,7 +591,7 @@ export const CustomCakePage: React.FC<CustomCakePageProps> = ({
                     color: '#cfc6b8',
                   }}
                 >
-                  📞 Prefer calling? <b>{content.biz?.phone || '+255 768 000 111'}</b>
+                  {content.biz?.phone && <>📞 Prefer calling? <b>{content.biz.phone}</b></>}
                 </div>
               </div>
             </div>

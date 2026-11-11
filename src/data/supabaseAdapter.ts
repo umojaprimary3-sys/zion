@@ -63,6 +63,13 @@ export class SupabaseDataAdapter implements DataAdapter {
         )
         .on(
           'postgres_changes',
+          { event: '*', schema: 'public', table: 'menu_categories' },
+          () => {
+            this.refreshMenu();
+          }
+        )
+        .on(
+          'postgres_changes',
           { event: '*', schema: 'public', table: 'site_content' },
           (payload) => {
             this.handleContentChange(payload);
@@ -167,13 +174,26 @@ export class SupabaseDataAdapter implements DataAdapter {
     }
   }
 
+  /** Removes rows the admin deleted, so deletions also reach every visitor. */
+  private async deleteMissing(table: string, keepIds: string[]) {
+    if (!keepIds.length) return;
+    const { data, error } = await supabase.from(table).select('id');
+    if (error || !data) return;
+    const gone = data.map((r: { id: string }) => String(r.id)).filter((id) => !keepIds.includes(id));
+    if (gone.length) await supabase.from(table).delete().in('id', gone);
+  }
+
   private async refreshMenu() {
     try {
       const { data } = await supabase.from('menu_items').select('*').order('sort_order', { ascending: true });
       if (data && data.length > 0 && this.inMemoryData) {
         this.inMemoryData.menu = data.map((row) => this.mapMenuItemFromRow(row));
-        notifyStoreSubscribers(this.inMemoryData);
       }
+      const { data: cats } = await supabase.from('menu_categories').select('*').order('sort_order', { ascending: true });
+      if (cats && cats.length > 0 && this.inMemoryData) {
+        this.inMemoryData.cats = cats.map((c: any) => ({ id: String(c.id), label: c.label || '', icon: c.icon || '' }));
+      }
+      if (this.inMemoryData) notifyStoreSubscribers(this.inMemoryData);
     } catch (e) {
       console.warn('refreshMenu error:', e);
     }
@@ -261,16 +281,6 @@ export class SupabaseDataAdapter implements DataAdapter {
         if (inqRes.value.data.length > 0) {
           merged.inbox = inqRes.value.data.map((row) => this.mapInquiryFromRow(row));
         }
-      } else {
-        // Fallback check table 'messages'
-        try {
-          const { data: msgData, error: msgErr } = await supabase.from('messages').select('*');
-          if (!msgErr && msgData && msgData.length > 0) {
-            merged.inbox = msgData.map((row) => this.mapInquiryFromRow(row));
-          }
-        } catch {
-          // Table doesn't exist
-        }
       }
 
       // Process reviews
@@ -312,6 +322,7 @@ export class SupabaseDataAdapter implements DataAdapter {
           const v = row.value || row.data || row.content;
           if (k === 'main_content' && typeof v === 'object') {
             Object.assign(merged, v);
+            merged.biz = { ...DEFAULT_STORE.biz, ...(merged.biz || {}) };
           } else if (k && v && typeof v === 'object' && k in merged) {
             (merged as any)[k] = { ...(merged as any)[k], ...v };
           } else if (k && v && k in merged) {
@@ -380,11 +391,13 @@ export class SupabaseDataAdapter implements DataAdapter {
             price: m.price,
             image: m.image,
             popular: !!m.popular,
+            dietary: m.dietary || [],
             serves: m.serves || '',
             prep_time: m.prepTime || '',
             sort_order: idx,
           }));
           await supabase.from('menu_items').upsert(rows, { onConflict: 'id' });
+          await this.deleteMissing('menu_items', rows.map((r) => r.id));
         } catch (e) {
           console.warn('menu_items upsert:', e);
         }
@@ -400,6 +413,7 @@ export class SupabaseDataAdapter implements DataAdapter {
             sort_order: idx,
           }));
           await supabase.from('menu_categories').upsert(catRows, { onConflict: 'id' });
+          await this.deleteMissing('menu_categories', catRows.map((r: { id: string }) => r.id));
         } catch (e) {
           console.warn('menu_categories upsert:', e);
         }
@@ -470,6 +484,7 @@ export class SupabaseDataAdapter implements DataAdapter {
             featured: !!r.featured,
           }));
           await supabase.from('reviews').upsert(reviewRows, { onConflict: 'id' });
+          await this.deleteMissing('reviews', reviewRows.map((r: { id: string }) => r.id));
         } catch (e) {
           console.warn('reviews upsert:', e);
         }
@@ -554,12 +569,8 @@ export class SupabaseDataAdapter implements DataAdapter {
 
       const { error } = await supabase.from('inquiries').insert(row);
       if (error) {
-        // Fallback to table 'messages'
-        const { error: msgErr } = await supabase.from('messages').insert(row);
-        if (msgErr) {
-          console.error('Failed to insert inquiry into Supabase:', msgErr.message);
-          throw new Error(msgErr.message);
-        }
+        console.error('Failed to insert inquiry into Supabase:', error.message);
+        throw new Error(error.message);
       }
     } catch (err) {
       console.error('Supabase createInquiry failed:', err);
@@ -594,7 +605,7 @@ export class SupabaseDataAdapter implements DataAdapter {
       const row = {
         id: pendingReview.id,
         author: pendingReview.author,
-        location: pendingReview.location || 'Mbeya',
+        location: pendingReview.location || '',
         rating: pendingReview.rating || 5,
         comment: pendingReview.comment || '',
         date: pendingReview.date || new Date().toISOString().slice(0, 10),
@@ -690,6 +701,7 @@ export class SupabaseDataAdapter implements DataAdapter {
       price: Number(row.price) || 0,
       image: row.image || '',
       popular: !!row.popular,
+      dietary: Array.isArray(row.dietary) ? row.dietary : [],
       serves: row.serves || '',
       prepTime: row.prep_time || row.prepTime || '',
     };

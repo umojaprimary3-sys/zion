@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { useModalA11y } from '../lib/useModalA11y';
+import { bt } from '../lib/biz';
+import { useContent } from '../data/store';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { PageId } from '../types';
 
@@ -17,6 +20,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
   onSuccess,
   onNavigate,
 }) => {
+  const content = useContent();
   const { signIn, signUp, sendPasswordReset, updatePassword } = useCustomerAuth();
 
   const [mode, setMode] = useState<'login' | 'register' | 'forgot-password' | 'reset-password'>(initialMode);
@@ -34,6 +38,9 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, onClose, dialogRef);
 
   if (!isOpen) return null;
 
@@ -97,7 +104,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
           return;
         }
 
-        setSuccessMessage('Account created successfully! Welcome to Zion Cakes & Bites.');
+        setSuccessMessage(bt(content.biz, 'Account created successfully! Welcome to Zion Cakes & Bites.'));
         setTimeout(() => {
           setLoading(false);
           onClose();
@@ -166,13 +173,18 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
           maxHeight: '92vh',
           overflowY: 'auto',
         }}
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Customer account"
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
             <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: '4px' }}>
-              Zion Cakes & Bites Customer
+              {bt(content.biz, 'Zion Cakes & Bites Customer')}
             </div>
             <h2 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '24px', lineHeight: 1.2 }}>
               {mode === 'login' && 'Sign In to Your Account'}
@@ -182,9 +194,9 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({
             </h2>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
               {mode === 'login' && 'Access your order history, delivery details, and favorites.'}
-              {mode === 'register' && 'Join Zion loyalty, track your custom cakes, and speed up orders.'}
+              {mode === 'register' && bt(content.biz, 'Join Zion loyalty, track your custom cakes, and speed up orders.')}
               {mode === 'forgot-password' && 'Enter your email address to receive a secure recovery link.'}
-              {mode === 'reset-password' && 'Create a fresh password for your Zion customer account.'}
+              {mode === 'reset-password' && bt(content.biz, 'Create a fresh password for your Zion customer account.')}
             </p>
           </div>
           <button

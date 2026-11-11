@@ -14,6 +14,7 @@ export interface MenuItemData {
   price: number;
   image: string;
   popular?: boolean;
+  dietary?: string[];
   serves?: string;
   prepTime?: string;
 }
@@ -92,6 +93,7 @@ export interface BizData {
   footer: string;
   address1: string;
   address2: string;
+  city?: string;              // used in page wording, e.g. "Mbeya"
   phone: string;
   whatsapp: string;
   email: string;
@@ -102,6 +104,21 @@ export interface BizData {
   rating: string;
   reviewsCount: string;
   followers: string;
+  // --- Optional, admin-editable settings (leave blank until you have the info) ---
+  mapEmbed?: string;          // Google Maps embed URL (auto-built from address if blank)
+  orderGreeting?: string;     // First line of WhatsApp order messages
+  paymentMethods?: string;    // e.g. "M-Pesa, Tigo Pesa, Cash"
+  paymentInstructions?: string;
+  logoUrl?: string;
+  faviconUrl?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  ogImage?: string;
+  analyticsId?: string;       // Google Analytics measurement ID (G-XXXX)
+  privacyText?: string;
+  termsText?: string;
+  cookieText?: string;
+  showCookieNotice?: boolean;
 }
 
 export interface BannerData {
@@ -885,18 +902,32 @@ export const DEFAULT_STORE: StoreData = {
     footer: 'Freshly made in Mbeya, for every moment worth sharing.',
     address1: 'Forest Mpya, Maghorofani',
     address2: 'Mbeya City, Tanzania',
-    phone: '+255 768 000 111 / +255 689 123 456',
-    whatsapp: '255768000111',
-    email: 'orders@zioncakesmbeya.com',
-    instagram: '@zioncakesmbeya',
-    igUrl: 'https://instagram.com/zioncakesmbeya',
-    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Zion+Bakery+Forest+Mpya+Maghorofani+Mbeya+Tanzania',
-    dirUrl: 'https://www.google.com/maps/dir/?api=1&destination=Zion+Bakery+Forest+Mpya+Maghorofani+Mbeya+Tanzania',
-    rating: '4.1',
-    reviewsCount: '87 Google Reviews',
-    followers: '6,896+'
-  },
-  banners: {
+    city: 'Mbeya',
+    phone: '',
+    whatsapp: '',
+    email: '',
+    instagram: '',
+    igUrl: '',
+    mapUrl: '',
+    dirUrl: '',
+    rating: '',
+    reviewsCount: '',
+    followers: '',
+    mapEmbed: '',
+    orderGreeting: 'Hello! I would like to place an order.',
+    paymentMethods: '',
+    paymentInstructions: '',
+    logoUrl: '',
+    faviconUrl: '',
+    seoTitle: '',
+    seoDescription: '',
+    ogImage: '',
+    analyticsId: '',
+    privacyText: '',
+    termsText: '',
+    cookieText: 'We use cookies and local storage to keep the site working and remember your preferences.',
+    showCookieNotice: true
+  },  banners: {
     menu: {
       eyebrow: 'FRESHLY BAKED & COOKED IN MBEYA',
       title: 'Our Full Menu',
@@ -932,8 +963,8 @@ export const DEFAULT_STORE: StoreData = {
     rating: {
       title: 'Loved By Mbeya',
       text: 'Trusted by hundreds of happy customers across the city.',
-      score: '4.1★',
-      label: '87 Google Reviews'
+      score: '',
+      label: ''
     },
     sig: {
       title: 'Signature Celebration Cake',
@@ -944,8 +975,8 @@ export const DEFAULT_STORE: StoreData = {
       m2: '12 flavors'
     },
     stats: [
-      { t: '4.1/5', s: 'Google Rating (87 reviews)' },
-      { t: '6,896+', s: 'Instagram Followers' },
+      { t: '', s: 'Google Rating (set in Admin → Business)' },
+      { t: '', s: 'Instagram Followers (set in Admin → Business)' },
       { t: 'Fresh Daily', s: 'Made-to-order' }
     ],
     serves: {
@@ -1259,9 +1290,9 @@ export const DEFAULT_STORE: StoreData = {
   cfg: {
     api: '',
     prefix: 'ZN',
-    fromName: 'Zion Cakes & Bites',
-    from: 'orders@zioncakesmbeya.com',
-    notify: 'orders@zioncakesmbeya.com'
+    fromName: '',
+    from: '',
+    notify: ''
   },
   pg: {
     orderBtn: 'Order Now',
@@ -1598,22 +1629,75 @@ export function formatWhatsAppNumber(phone: string): string {
   return d;
 }
 
-export function generateOrderId(prefix = 'ZN', existingOrders: OrderRecord[] = []): string {
-  const maxNum = Math.max(
-    1000,
-    ...existingOrders.map((o) => +String(o.id).replace(/\D/g, '') || 0)
-  );
-  return `${prefix}-${maxNum + 1}`;
+export function generateOrderId(prefix = 'ZN', _existingOrders: OrderRecord[] = []): string {
+  // Collision-safe: 3 time chars + 5 crypto-random chars (no 0/O/1/I so ids are easy to read out loud).
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = new Uint8Array(5);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) crypto.getRandomValues(bytes);
+  else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  const rand = Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+  const t = Date.now().toString(36).toUpperCase().slice(-3);
+  return `${prefix}-${t}${rand}`;
 }
 
+const PENDING_KEY = 'zion_pending_orders';
+
+function readPending(): OrderRecord[] {
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function writePending(list: OrderRecord[]) {
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify(list));
+  } catch {
+    // storage unavailable
+  }
+}
+
+/** Saves an order. If the network/database fails, the order is queued locally and retried automatically. */
 export async function saveOrderToStore(order: OrderRecord): Promise<void> {
-  await activeAdapter.createOrder(order);
+  try {
+    await activeAdapter.createOrder(order);
+  } catch (err) {
+    writePending([...readPending().filter((o) => o.id !== order.id), order]);
+    throw err;
+  }
+}
+
+/** Retry any orders that previously failed to save. Called on app start and when the connection returns. */
+export async function flushPendingOrders(): Promise<void> {
+  const pending = readPending();
+  if (!pending.length) return;
+  const remaining: OrderRecord[] = [];
+  for (const o of pending) {
+    try {
+      await activeAdapter.createOrder(o);
+    } catch {
+      remaining.push(o);
+    }
+  }
+  writePending(remaining);
+}
+
+const lastSubmit: Record<string, number> = {};
+/** Client-side double-submit guard (the database enforces the real limits). */
+function tooSoon(kind: string, ms = 8000): boolean {
+  const now = Date.now();
+  if (lastSubmit[kind] && now - lastSubmit[kind] < ms) return true;
+  lastSubmit[kind] = now;
+  return false;
 }
 
 export async function saveInquiryToStore(inquiry: InquiryRecord): Promise<void> {
+  if (tooSoon('inquiry')) return;
   await activeAdapter.createInquiry(inquiry);
 }
 
 export async function saveReviewToStore(review: ReviewRecord): Promise<void> {
+  if (tooSoon('review')) return;
   await activeAdapter.createReview(review);
 }

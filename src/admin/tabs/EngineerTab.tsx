@@ -174,21 +174,21 @@ export const EngineerTab: React.FC<EngineerTabProps> = ({
 
           <TextField
             label="Email sender name"
-            value={store.cfg?.fromName || 'Zion Cakes & Bites'}
+            value={store.cfg?.fromName || store.biz.name}
             onChange={(val) => updateCfg({ fromName: val })}
           />
 
           <TextField
             label="Email sender address"
             type="email"
-            value={store.cfg?.from || 'orders@zioncakesmbeya.com'}
+            value={store.cfg?.from || ''}
             onChange={(val) => updateCfg({ from: val })}
           />
 
           <TextField
             label="Send new-order alerts to"
             type="email"
-            value={store.cfg?.notify || 'orders@zioncakesmbeya.com'}
+            value={store.cfg?.notify || ''}
             onChange={(val) => updateCfg({ notify: val })}
           />
         </div>
