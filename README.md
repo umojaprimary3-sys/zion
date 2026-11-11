@@ -13,6 +13,19 @@ saved to the database. Visitors receive changes live (Supabase Realtime) — no 
 5. `npm run dev` (local) or `npm run build` (deploy the `dist/` folder).
 6. Open `/#/admin`, sign in with Supabase Auth, then fill in **Business** (see the Setup checklist).
 
+## Deploying to Netlify (Fix "The website is not connected to the database yet")
+Because Vite embeds `VITE_` variables into client code **at build time**, you must define your Supabase credentials in Netlify and then rebuild:
+
+1. In your **Netlify Dashboard**, click your site.
+2. Go to **Site configuration** (or **Site settings**) → **Environment variables**.
+3. Add the two required variables:
+   - **`VITE_SUPABASE_URL`**: Your Supabase project URL (e.g. `https://your-project-id.supabase.co`)
+   - **`VITE_SUPABASE_ANON_KEY`**: Your Supabase anon public API key (from Supabase Dashboard → *Project Settings* → *API* → *anon public*)
+4. **Trigger a new build**:
+   - Go to the **Deploys** tab in Netlify.
+   - Click **Trigger deploy** → **Clear cache and deploy site**.
+5. Once deployment completes, your site will connect to Supabase and customers can sign up/log in immediately!
+
 ## Optional: sending emails (Admin → Mail)
 1. Create a free Resend account and verify your sending domain.
 2. `supabase functions deploy send-email`

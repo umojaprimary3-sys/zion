@@ -345,7 +345,8 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!isSupabaseConfigured()) {
       return {
         success: false,
-        error: 'The website is not connected to the database yet. Please contact Zion Cakes.',
+        error:
+          'The website is not connected to the database yet. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your hosting environment (e.g. Netlify) and redeploy, or contact Zion Cakes.',
       };
     }
 
@@ -426,7 +427,8 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!isSupabaseConfigured()) {
       return {
         success: false,
-        error: 'The website is not connected to the database yet. Please contact Zion Cakes.',
+        error:
+          'The website is not connected to the database yet. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your hosting environment (e.g. Netlify) and redeploy, or contact Zion Cakes.',
       };
     }
 
@@ -494,6 +496,14 @@ export const CustomerAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Send Password Reset
   const sendPasswordReset = async (email: string) => {
+    if (!isSupabaseConfigured()) {
+      return {
+        success: false,
+        error:
+          'The website is not connected to the database yet. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your hosting environment (e.g. Netlify) and redeploy.',
+      };
+    }
+
     try {
       const cleanEmail = email.trim().toLowerCase();
       if (!cleanEmail || !cleanEmail.includes('@')) {

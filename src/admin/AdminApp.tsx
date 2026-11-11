@@ -156,6 +156,12 @@ export default function AdminApp() {
 
   const handleSupabaseLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSupabaseConfigured()) {
+      setPasscodeError(
+        '⚠️ Supabase credentials are missing. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your Netlify Site configuration → Environment variables, then trigger a redeploy.'
+      );
+      return;
+    }
     if (!authEmail || !authPassword) {
       setPasscodeError('Please enter email and password');
       return;
@@ -419,6 +425,25 @@ export default function AdminApp() {
               </form>
             ) : (
               <form onSubmit={handleSupabaseLogin}>
+                {!isSupabaseConfigured() && (
+                  <div
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      border: '1px solid #ef4444',
+                      color: '#fca5a5',
+                      padding: '12px',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      lineHeight: '1.5',
+                      marginBottom: '12px',
+                    }}
+                  >
+                    <strong>⚠️ Database Not Connected:</strong>
+                    <div style={{ marginTop: '4px' }}>
+                      Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> in Netlify’s <em>Site configuration → Environment variables</em>, then trigger a <em>Deploy site</em>.
+                    </div>
+                  </div>
+                )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <input
                     type="email"
