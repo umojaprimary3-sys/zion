@@ -261,8 +261,8 @@ export class SupabaseDataAdapter implements DataAdapter {
         supabase.from('inquiries').select('*').order('created_at', { ascending: false }),
         supabase.from('reviews').select('*').order('created_at', { ascending: false }),
         supabase.from('members').select('*'),
-        supabase.from('menu_items').select('*'),
-        supabase.from('menu_categories').select('*'),
+        supabase.from('menu_items').select('*').order('sort_order', { ascending: true }),
+        supabase.from('menu_categories').select('*').order('sort_order', { ascending: true }),
         supabase.from('site_content').select('*'),
       ]);
 

@@ -115,6 +115,7 @@ export interface SupabaseHealthResult {
     reviews: boolean;
     members: boolean;
     menu_items: boolean;
+    menu_categories: boolean;
     site_content: boolean;
   };
 }
@@ -136,17 +137,19 @@ export async function checkSupabaseHealth(): Promise<SupabaseHealthResult> {
     reviews: false,
     members: false,
     menu_items: false,
+    menu_categories: false,
     site_content: false,
   };
 
   try {
     // Check connection using an innocuous query
-    const [ordersRes, inqRes, revRes, memRes, menuRes, contentRes] = await Promise.allSettled([
+    const [ordersRes, inqRes, revRes, memRes, menuRes, catRes, contentRes] = await Promise.allSettled([
       supabase.from('orders').select('id').limit(1),
       supabase.from('inquiries').select('id').limit(1),
       supabase.from('reviews').select('id').limit(1),
       supabase.from('members').select('id').limit(1),
       supabase.from('menu_items').select('id').limit(1),
+      supabase.from('menu_categories').select('id').limit(1),
       supabase.from('site_content').select('key').limit(1),
     ]);
 
@@ -157,6 +160,7 @@ export async function checkSupabaseHealth(): Promise<SupabaseHealthResult> {
     if (revRes.status === 'fulfilled' && !revRes.value.error) tablesStatus.reviews = true;
     if (memRes.status === 'fulfilled' && !memRes.value.error) tablesStatus.members = true;
     if (menuRes.status === 'fulfilled' && !menuRes.value.error) tablesStatus.menu_items = true;
+    if (catRes.status === 'fulfilled' && !catRes.value.error) tablesStatus.menu_categories = true;
     if (contentRes.status === 'fulfilled' && !contentRes.value.error) tablesStatus.site_content = true;
 
     // Get current auth session

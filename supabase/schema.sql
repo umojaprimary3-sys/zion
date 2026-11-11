@@ -47,8 +47,6 @@ create table if not exists public.members (
   notes text default '',
   created_at timestamptz default now()
 );
-create index if not exists idx_members_phone on public.members(phone);
-create index if not exists idx_members_email on public.members(email);
 
 create table if not exists public.orders (
   id text primary key,
@@ -68,10 +66,6 @@ create table if not exists public.orders (
   src text default 'Website order pop-up',
   created_at timestamptz default now()
 );
-create index if not exists idx_orders_status on public.orders(status);
-create index if not exists idx_orders_created on public.orders(created_at desc);
-create index if not exists idx_orders_user_id on public.orders(user_id);
-create index if not exists idx_orders_member_id on public.orders(member_id);
 
 create table if not exists public.order_events (
   id bigint generated always as identity primary key,
@@ -80,7 +74,6 @@ create table if not exists public.order_events (
   notes text default '',
   created_at timestamptz default now()
 );
-create index if not exists idx_order_events_order on public.order_events(order_id);
 
 create table if not exists public.inquiries (
   id bigint generated always as identity primary key,
@@ -93,7 +86,6 @@ create table if not exists public.inquiries (
   status text default 'unread' check (status in ('unread', 'read', 'replied')),
   created_at timestamptz default now()
 );
-create index if not exists idx_inquiries_status on public.inquiries(status);
 
 create table if not exists public.reviews (
   id text primary key,
@@ -109,7 +101,6 @@ create table if not exists public.reviews (
   featured boolean default false,
   created_at timestamptz default now()
 );
-create index if not exists idx_reviews_status on public.reviews(status);
 
 create table if not exists public.menu_categories (
   id text primary key,
@@ -132,15 +123,100 @@ create table if not exists public.menu_items (
   sort_order integer default 0,
   created_at timestamptz default now()
 );
-create index if not exists idx_menu_cat on public.menu_items(category);
--- for databases created from the older guide:
-alter table public.menu_items add column if not exists dietary text[] default '{}';
 
 create table if not exists public.site_content (
   key text primary key,
   value jsonb not null,
   updated_at timestamptz default now()
 );
+
+
+-- --------------------------------------------------------------------
+-- 2b. UPGRADE EXISTING TABLES: if a table already existed from an older
+--     setup, "create table if not exists" skips it, so make sure every
+--     column this website needs is present before indexes/policies use it.
+-- --------------------------------------------------------------------
+alter table public.members add column if not exists user_id uuid;
+alter table public.members add column if not exists name text default '';
+alter table public.members add column if not exists phone text default '';
+alter table public.members add column if not exists email text default '';
+alter table public.members add column if not exists area text default '';
+alter table public.members add column if not exists joined text default '';
+alter table public.members add column if not exists birthday text default '';
+alter table public.members add column if not exists consent boolean default true;
+alter table public.members add column if not exists status text default 'active';
+alter table public.members add column if not exists notes text default '';
+alter table public.members add column if not exists created_at timestamptz default now();
+alter table public.orders add column if not exists user_id uuid;
+alter table public.orders add column if not exists member_id text;
+alter table public.orders add column if not exists type text default 'delivery';
+alter table public.orders add column if not exists status text default 'new';
+alter table public.orders add column if not exists name text default '';
+alter table public.orders add column if not exists phone text default '';
+alter table public.orders add column if not exists email text default '';
+alter table public.orders add column if not exists zone text default '';
+alter table public.orders add column if not exists items text default '';
+alter table public.orders add column if not exists total numeric default 0;
+alter table public.orders add column if not exists pay text default 'unpaid';
+alter table public.orders add column if not exists date text default '';
+alter table public.orders add column if not exists notes text default '';
+alter table public.orders add column if not exists src text default 'Website order pop-up';
+alter table public.orders add column if not exists created_at timestamptz default now();
+alter table public.inquiries add column if not exists name text default '';
+alter table public.inquiries add column if not exists phone text default '';
+alter table public.inquiries add column if not exists email text default '';
+alter table public.inquiries add column if not exists type text default 'General Question';
+alter table public.inquiries add column if not exists message text default '';
+alter table public.inquiries add column if not exists date text default '';
+alter table public.inquiries add column if not exists status text default 'unread';
+alter table public.inquiries add column if not exists created_at timestamptz default now();
+alter table public.reviews add column if not exists author text default '';
+alter table public.reviews add column if not exists location text default '';
+alter table public.reviews add column if not exists rating integer default 5;
+alter table public.reviews add column if not exists comment text default '';
+alter table public.reviews add column if not exists date text default '';
+alter table public.reviews add column if not exists occasion text default '';
+alter table public.reviews add column if not exists verified boolean default false;
+alter table public.reviews add column if not exists status text default 'pending';
+alter table public.reviews add column if not exists reply text default '';
+alter table public.reviews add column if not exists featured boolean default false;
+alter table public.reviews add column if not exists created_at timestamptz default now();
+alter table public.menu_categories add column if not exists label text default '';
+alter table public.menu_categories add column if not exists icon text default '';
+alter table public.menu_categories add column if not exists sort_order integer default 0;
+alter table public.menu_items add column if not exists name text default '';
+alter table public.menu_items add column if not exists category text default 'cakes';
+alter table public.menu_items add column if not exists description text default '';
+alter table public.menu_items add column if not exists price numeric default 0;
+alter table public.menu_items add column if not exists image text default '';
+alter table public.menu_items add column if not exists popular boolean default false;
+alter table public.menu_items add column if not exists dietary text[] default '{}';
+alter table public.menu_items add column if not exists serves text default '';
+alter table public.menu_items add column if not exists prep_time text default '';
+alter table public.menu_items add column if not exists sort_order integer default 0;
+alter table public.menu_items add column if not exists created_at timestamptz default now();
+alter table public.site_content add column if not exists value jsonb default '{}'::jsonb;
+alter table public.site_content add column if not exists updated_at timestamptz default now();
+alter table public.order_events add column if not exists status text;
+alter table public.order_events add column if not exists to_status text;
+alter table public.order_events add column if not exists notes text default '';
+alter table public.order_events add column if not exists created_at timestamptz default now();
+
+create unique index if not exists members_user_id_key on public.members(user_id);
+
+-- --------------------------------------------------------------------
+-- 2c. INDEXES (created after the upgrade step so every column exists)
+-- --------------------------------------------------------------------
+create index if not exists idx_members_phone on public.members(phone);
+create index if not exists idx_members_email on public.members(email);
+create index if not exists idx_orders_status on public.orders(status);
+create index if not exists idx_orders_created on public.orders(created_at desc);
+create index if not exists idx_orders_user_id on public.orders(user_id);
+create index if not exists idx_orders_member_id on public.orders(member_id);
+create index if not exists idx_order_events_order on public.order_events(order_id);
+create index if not exists idx_inquiries_status on public.inquiries(status);
+create index if not exists idx_reviews_status on public.reviews(status);
+create index if not exists idx_menu_cat on public.menu_items(category);
 
 -- --------------------------------------------------------------------
 -- 3. TRIGGERS
@@ -212,7 +288,13 @@ set search_path = public
 as $$
 begin
   if tg_op = 'INSERT' or new.status is distinct from old.status then
-    insert into public.order_events (order_id, status) values (new.id, new.status);
+    -- Never let history logging block an order: errors here are ignored.
+    begin
+      insert into public.order_events (order_id, status, to_status, notes)
+      values (new.id, new.status, new.status, coalesce(new.notes, ''));
+    exception when others then
+      null;
+    end;
   end if;
   return new;
 end;

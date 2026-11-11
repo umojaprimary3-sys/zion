@@ -245,6 +245,7 @@ export const EngineerTab: React.FC<EngineerTabProps> = ({
                 <div>reviews: {healthResult.tables.reviews ? '🟢 Active' : '⚪ Not found'}</div>
                 <div>members: {healthResult.tables.members ? '🟢 Active' : '⚪ Not found'}</div>
                 <div>menu_items: {healthResult.tables.menu_items ? '🟢 Active' : '⚪ Not found'}</div>
+                <div>menu_categories: {healthResult.tables.menu_categories ? '🟢 Active' : '⚪ Not found'}</div>
                 <div>site_content: {healthResult.tables.site_content ? '🟢 Active' : '⚪ Not found'}</div>
               </div>
             )}
